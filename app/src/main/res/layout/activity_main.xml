@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- SECTION: Agregar tópicos -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Agregar tópico MQTT"
+            android:textSize="18sp"
+            android:paddingBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/edtTopico"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ej: /florida/Aire/tt"/>
+
+        <Button
+            android:id="@+id/btnAgregar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Agregar tópico"
+            android:layout_marginTop="8dp"/>
+
+        <!-- TABLA donde se agregan los tópicos -->
+        <LinearLayout
+            android:id="@+id/tablaTopicos"
+            android:layout_width="match_parent"
+            android:layout_height="97dp"
+            android:orientation="vertical"
+            android:paddingTop="12dp" />
+
+        <!-- SECTION: Datos mostrados por MQTT -->
+
+    </LinearLayout>
+</ScrollView>
