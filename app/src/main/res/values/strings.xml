@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">mqtt1</string>
+    <string name="app_name">Mqtt Gas Monitor</string>
+    <string name="navigation_drawer_open">Abrir menú de navegación</string>
+    <string name="navigation_drawer_close">Cerrar menú de navegación</string>
 </resources>

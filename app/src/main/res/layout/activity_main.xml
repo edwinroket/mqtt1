@@ -1,45 +1,128 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
 
+    <!-- CONTENIDO PRINCIPAL -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:background="#F5F5F5">
 
-        <!-- SECTION: Agregar tópicos -->
-        <TextView
+        <!-- Barra Superior Personalizada (Toolbar simple) -->
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Agregar tópico MQTT"
-            android:textSize="18sp"
-            android:paddingBottom="6dp"/>
+            android:layout_height="?attr/actionBarSize"
+            android:background="#009688"
+            android:elevation="4dp"
+            app:titleTextColor="#FFFFFF"
+            app:title="Monitor Gas"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"/>
 
-        <EditText
-            android:id="@+id/edtTopico"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Ej: /florida/Aire/tt"/>
-
-        <Button
-            android:id="@+id/btnAgregar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Agregar tópico"
-            android:layout_marginTop="8dp"/>
-
-        <!-- TABLA donde se agregan los tópicos -->
+        <!-- Dashboard (Lo que ya tenías) -->
         <LinearLayout
-            android:id="@+id/tablaTopicos"
             android:layout_width="match_parent"
-            android:layout_height="97dp"
+            android:layout_height="match_parent"
             android:orientation="vertical"
-            android:paddingTop="12dp" />
+            android:gravity="center_horizontal"
+            android:padding="24dp">
 
-        <!-- SECTION: Datos mostrados por MQTT -->
+            <TextView
+                android:id="@+id/txtWelcome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mi Balón de Gas"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="32dp"/>
 
+            <!-- Tarjeta Central -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="6dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="32dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nivel Actual"
+                        android:textSize="16sp"
+                        android:textColor="#666666"
+                        android:layout_marginBottom="16dp"/>
+
+                    <TextView
+                        android:id="@+id/txtPeso"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="-- kg"
+                        android:textSize="56sp"
+                        android:textStyle="bold"
+                        android:textColor="#009688"/>
+
+                    <ProgressBar
+                        android:id="@+id/progressBarGas"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="20dp"
+                        android:layout_marginTop="24dp"
+                        android:progress="0"
+                        android:max="100"
+                        android:progressDrawable="@drawable/custom_progress_bar" />
+
+                    <TextView
+                        android:id="@+id/txtEstado"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Conectando..."
+                        android:textSize="14sp"
+                        android:textColor="#999999"
+                        android:layout_marginTop="12dp"/>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Espacio y Mensaje Admin (Oculto por defecto) -->
+            <TextView
+                android:id="@+id/txtAdminInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="PANEL DE ADMINISTRADOR ACTIVO\nVisualizando datos globales"
+                android:gravity="center"
+                android:background="#FFEB3B"
+                android:padding="12dp"
+                android:textStyle="bold"
+                android:textColor="#D32F2F"
+                android:layout_marginTop="32dp"
+                android:visibility="gone"/>
+
+        </LinearLayout>
     </LinearLayout>
-</ScrollView>
+
+    <!-- MENÚ LATERAL (Navigation View) -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        app:headerLayout="@layout/nav_header"
+        app:menu="@menu/drawer_menu" />
+
+</androidx.drawerlayout.widget.DrawerLayout>

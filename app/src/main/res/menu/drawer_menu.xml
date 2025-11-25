@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_home"
+            android:icon="@android:drawable/ic_menu_view"
+            android:title="Monitor (Inicio)" />
+        
+        <item
+            android:id="@+id/nav_profile"
+            android:icon="@android:drawable/ic_menu_my_calendar"
+            android:title="Mi Perfil" />
+    </group>
+
+    <!-- SECCIÓN DE ADMINISTRADOR (Inicialmente oculta o separada) -->
+    <item android:title="Administración">
+        <menu>
+            <item
+                android:id="@+id/nav_admin_users"
+                android:icon="@android:drawable/ic_menu_agenda"
+                android:title="Gestionar Usuarios" />
+            <item
+                android:id="@+id/nav_admin_devices"
+                android:icon="@android:drawable/ic_menu_manage"
+                android:title="Gestionar Balones" />
+        </menu>
+    </item>
+
+    <item android:title="Cuenta">
+        <menu>
+            <item
+                android:id="@+id/nav_logout"
+                android:icon="@android:drawable/ic_lock_power_off"
+                android:title="Cerrar Sesión" />
+        </menu>
+    </item>
+
+</menu>

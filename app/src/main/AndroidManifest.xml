@@ -16,15 +16,27 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Mqtt1">
+        
+        <!-- LoginActivity: Pantalla de inicio -->
         <activity
-            android:name=".MainActivity"
+            android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- RegisterActivity: Nueva pantalla de registro -->
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="false" />
+
+        <!-- MainActivity: Dashboard -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+            
     </application>
 
 </manifest>

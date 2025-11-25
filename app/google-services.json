@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "251659617530",
+    "project_id": "gas-tracer-c7159",
+    "storage_bucket": "gas-tracer-c7159.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:251659617530:android:2e809d9da0e31616f1f543",
+        "android_client_info": {
+          "package_name": "com.example.mqtt1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBy3PMbieMOVxX3N9k4-cHhGXRPX5SRnp4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

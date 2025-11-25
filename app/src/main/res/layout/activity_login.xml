@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="32dp"
+    android:background="#FFFFFF">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bienvenido"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:layout_marginBottom="8dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Inicia sesión para monitorear tu gas"
+        android:textSize="16sp"
+        android:textColor="#888888"
+        android:layout_marginBottom="48dp"/>
+
+    <!-- Campo Email -->
+    <EditText
+        android:id="@+id/edtEmail"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@android:drawable/edit_text"
+        android:hint="Correo Electrónico"
+        android:inputType="textEmailAddress"
+        android:paddingStart="12dp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Campo Contraseña -->
+    <EditText
+        android:id="@+id/edtPassword"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@android:drawable/edit_text"
+        android:hint="Contraseña"
+        android:inputType="textPassword"
+        android:paddingStart="12dp"
+        android:layout_marginBottom="32dp"/>
+
+    <!-- Botón Ingresar -->
+    <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="INGRESAR"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:backgroundTint="#009688"
+        android:textColor="#FFFFFF"/>
+
+    <TextView
+        android:id="@+id/txtRegister"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="¿No tienes cuenta? Regístrate aquí"
+        android:textColor="#009688"
+        android:layout_marginTop="24dp"
+        android:clickable="true"
+        android:focusable="true"/>
+
+</LinearLayout>
