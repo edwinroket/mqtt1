@@ -20,8 +20,8 @@ import org.eclipse.paho.client.mqttv3.*
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var mqttClient: MqttClient
-    private val serverUri = "tcp://test.mosquitto.org:1883"
-    private val topicoGas = "balon/gas/peso"
+    private val serverUri = "tcp://broker.hivemq.com:1883"
+    private val topicoGas = "gastracer/gas/peso"
 
     private lateinit var txtPeso: TextView
     private lateinit var txtEstado: TextView
