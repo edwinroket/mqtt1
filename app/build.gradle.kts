@@ -40,6 +40,9 @@ android {
 
 dependencies {
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.4")
+    // Dependencia de Firestore añadida manualmente
+    implementation("com.google.firebase:firebase-firestore:25.1.0")
+    
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

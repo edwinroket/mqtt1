@@ -15,7 +15,7 @@
         android:orientation="vertical"
         android:background="#F5F5F5">
 
-        <!-- Barra Superior Personalizada (Toolbar simple) -->
+        <!-- Barra Superior -->
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
@@ -26,96 +26,165 @@
             app:title="Monitor Gas"
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"/>
 
-        <!-- Dashboard (Lo que ya tenías) -->
+        <!-- Dashboard -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="center_horizontal"
-            android:padding="24dp">
+            android:padding="16dp">
 
-            <TextView
-                android:id="@+id/txtWelcome"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Mi Balón de Gas"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:textColor="#333333"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="32dp"/>
-
-            <!-- Tarjeta Central -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="6dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="32dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Nivel Actual"
-                        android:textSize="16sp"
-                        android:textColor="#666666"
-                        android:layout_marginBottom="16dp"/>
-
-                    <TextView
-                        android:id="@+id/txtPeso"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="-- kg"
-                        android:textSize="56sp"
-                        android:textStyle="bold"
-                        android:textColor="#009688"/>
-
-                    <ProgressBar
-                        android:id="@+id/progressBarGas"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:layout_width="match_parent"
-                        android:layout_height="20dp"
-                        android:layout_marginTop="24dp"
-                        android:progress="0"
-                        android:max="100"
-                        android:progressDrawable="@drawable/custom_progress_bar" />
-
-                    <TextView
-                        android:id="@+id/txtEstado"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Conectando..."
-                        android:textSize="14sp"
-                        android:textColor="#999999"
-                        android:layout_marginTop="12dp"/>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <!-- Espacio y Mensaje Admin (Oculto por defecto) -->
+            <!-- AVISO DE ROL (Admin / Distribuidor) -->
             <TextView
                 android:id="@+id/txtAdminInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="PANEL DE ADMINISTRADOR ACTIVO\nVisualizando datos globales"
+                android:text="PANEL ACTIVO"
                 android:gravity="center"
                 android:background="#FFEB3B"
                 android:padding="12dp"
                 android:textStyle="bold"
                 android:textColor="#D32F2F"
-                android:layout_marginTop="32dp"
+                android:layout_marginBottom="16dp"
                 android:visibility="gone"/>
+
+            <!-- ========================================== -->
+            <!-- MODO USUARIO: Medidor y Switch -->
+            <!-- ========================================== -->
+            <LinearLayout
+                android:id="@+id/layoutModoUsuario"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <TextView
+                    android:id="@+id/txtWelcome"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mi Balón de Gas"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="#333333"
+                    android:layout_marginBottom="24dp"/>
+
+                <!-- Tarjeta Central -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="6dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="32dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Nivel Actual"
+                            android:textSize="16sp"
+                            android:textColor="#666666"
+                            android:layout_marginBottom="16dp"/>
+
+                        <TextView
+                            android:id="@+id/txtPeso"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="-- kg"
+                            android:textSize="56sp"
+                            android:textStyle="bold"
+                            android:textColor="#009688"/>
+
+                        <ProgressBar
+                            android:id="@+id/progressBarGas"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="20dp"
+                            android:layout_marginTop="24dp"
+                            android:progress="0"
+                            android:max="100"
+                            android:progressDrawable="@drawable/custom_progress_bar" />
+
+                        <TextView
+                            android:id="@+id/txtEstado"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Conectando..."
+                            android:textSize="14sp"
+                            android:textColor="#999999"
+                            android:layout_marginTop="12dp"/>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- INTERRUPTOR DE COMPARTIR DATOS -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardCompartir"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="4dp"
+                    android:layout_marginTop="24dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp"
+                    app:strokeColor="#E0E0E0"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="16dp"
+                        android:gravity="center_vertical">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Modo Visible"
+                                android:textStyle="bold"
+                                android:textSize="16sp"
+                                android:textColor="#333333"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Permitir que distribuidores vean mi nivel de gas"
+                                android:textSize="12sp"
+                                android:textColor="#757575"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchCompartir"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- ========================================== -->
+            <!-- MODO DISTRIBUIDOR: Lista de Clientes -->
+            <!-- ========================================== -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerClientes"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                android:layout_marginTop="8dp"/>
 
         </LinearLayout>
     </LinearLayout>
 
-    <!-- MENÚ LATERAL (Navigation View) -->
+    <!-- MENÚ LATERAL -->
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view"
         android:layout_width="wrap_content"

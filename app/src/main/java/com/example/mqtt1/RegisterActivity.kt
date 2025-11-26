@@ -8,6 +8,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -18,12 +19,14 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var txtBackLogin: TextView
     
     private lateinit var auth: FirebaseAuth
+    private lateinit var db: FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
         auth = FirebaseAuth.getInstance()
+        db = FirebaseFirestore.getInstance()
 
         edtEmail = findViewById(R.id.edtEmailReg)
         edtPass = findViewById(R.id.edtPassReg)
@@ -55,7 +58,7 @@ class RegisterActivity : AppCompatActivity() {
         }
 
         txtBackLogin.setOnClickListener {
-            finish() // Vuelve a la actividad anterior (Login)
+            finish()
         }
     }
 
@@ -65,19 +68,49 @@ class RegisterActivity : AppCompatActivity() {
 
         auth.createUserWithEmailAndPassword(email, pass)
             .addOnCompleteListener(this) { task ->
-                btnRegister.isEnabled = true
-                btnRegister.text = "REGISTRARME"
-                
                 if (task.isSuccessful) {
-                    Toast.makeText(this, "¡Cuenta creada con éxito!", Toast.LENGTH_SHORT).show()
-                    // Al crear cuenta, Firebase hace login automático. Vamos al Dashboard.
-                    val intent = Intent(this, MainActivity::class.java)
-                    // Limpiamos la pila para que no pueda volver atrás al registro/login
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
+                    // Usuario creado en Auth. Ahora lo guardamos en la Base de Datos.
+                    guardarDatosUsuarioEnFirestore(email)
                 } else {
+                    btnRegister.isEnabled = true
+                    btnRegister.text = "REGISTRARME"
                     Toast.makeText(this, "Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                 }
             }
+    }
+
+    private fun guardarDatosUsuarioEnFirestore(email: String) {
+        // Datos básicos del usuario
+        val usuarioMap = hashMapOf(
+            "email" to email,
+            "rol" to "user", // Por defecto, todos son usuarios normales
+            "fecha_registro" to System.currentTimeMillis()
+        )
+
+        // Guardamos en la colección "usuarios"
+        db.collection("usuarios")
+            .add(usuarioMap)
+            .addOnSuccessListener {
+                // Todo salió perfecto
+                btnRegister.isEnabled = true
+                btnRegister.text = "REGISTRARME"
+                Toast.makeText(this, "¡Cuenta creada con éxito!", Toast.LENGTH_SHORT).show()
+                
+                irAlDashboard()
+            }
+            .addOnFailureListener { e ->
+                // Se creó la cuenta pero falló la base de datos. Dejamos pasar igual al usuario.
+                btnRegister.isEnabled = true
+                btnRegister.text = "REGISTRARME"
+                Toast.makeText(this, "Cuenta creada (sin perfil detallado)", Toast.LENGTH_SHORT).show()
+                
+                irAlDashboard()
+            }
+    }
+
+    private fun irAlDashboard() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
     }
 }

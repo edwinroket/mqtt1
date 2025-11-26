@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Configuración de Balón"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- SELECCIÓN DE KILOS -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tamaño del Balón:"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#666666"
+            android:layout_marginBottom="12dp"/>
+
+        <RadioGroup
+            android:id="@+id/radioGroupKilos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginBottom="24dp">
+
+            <RadioButton
+                android:id="@+id/rb5kg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5kg"
+                android:layout_marginEnd="16dp"/>
+            <RadioButton
+                android:id="@+id/rb11kg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="11kg"
+                android:layout_marginEnd="16dp"/>
+            <RadioButton
+                android:id="@+id/rb15kg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="15kg"
+                android:layout_marginEnd="16dp"/>
+            <RadioButton
+                android:id="@+id/rb45kg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="45kg"/>
+        </RadioGroup>
+
+        <!-- SELECCIÓN DE EMPRESA -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Empresa Distribuidora:"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#666666"
+            android:layout_marginBottom="12dp"/>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_marginBottom="24dp">
+
+            <AutoCompleteTextView
+                android:id="@+id/spinnerEmpresa"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:text="Gasco" 
+                />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- FECHA INSTALACIÓN -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="8dp"
+            app:cardBackgroundColor="#E0F2F1"
+            app:cardElevation="0dp"
+            android:layout_marginBottom="32dp">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Fecha de Instalación (Hoy):"
+                    android:textSize="14sp"
+                    android:textColor="#00695C"/>
+                    
+                <TextView
+                    android:id="@+id/txtFechaHoy"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="--/--/----"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#004D40"
+                    android:layout_marginTop="4dp"/>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <Button
+            android:id="@+id/btnGuardarConfig"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Confirmar Balón Nuevo"
+            android:backgroundTint="#009688"
+            android:textSize="16sp"/>
+
+    </LinearLayout>
+</ScrollView>

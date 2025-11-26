@@ -4,26 +4,34 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/nav_home"
-            android:icon="@android:drawable/ic_menu_view"
-            android:title="Monitor (Inicio)" />
+            android:icon="@android:drawable/ic_menu_compass"
+            android:title="Inicio" />
         
         <item
             android:id="@+id/nav_profile"
-            android:icon="@android:drawable/ic_menu_my_calendar"
+            android:icon="@android:drawable/ic_menu_myplaces"
             android:title="Mi Perfil" />
+
+        <!-- Renombrado a "Mi Gas" -->
+        <item
+            android:id="@+id/nav_gas_config"
+            android:icon="@android:drawable/ic_menu_preferences"
+            android:title="Mi Gas" />
     </group>
 
-    <!-- SECCIÓN DE ADMINISTRADOR (Inicialmente oculta o separada) -->
+    <!-- Sección Admin -->
     <item android:title="Administración">
         <menu>
             <item
                 android:id="@+id/nav_admin_users"
                 android:icon="@android:drawable/ic_menu_agenda"
-                android:title="Gestionar Usuarios" />
+                android:title="Usuarios"
+                android:visible="false"/>
             <item
                 android:id="@+id/nav_admin_devices"
                 android:icon="@android:drawable/ic_menu_manage"
-                android:title="Gestionar Balones" />
+                android:title="Dispositivos"
+                android:visible="false"/>
         </menu>
     </item>
 
