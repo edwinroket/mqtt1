@@ -7,6 +7,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.ImageView
 import android.widget.ProgressBar
@@ -66,6 +68,11 @@ class MainActivity : AppCompatActivity() {
     private val channelId = "alerta_gas_channel"
     private val umbralCritico = 10 // 10% para activar el Buzzer
 
+    // Lógica de Alarma Temporizada
+    private var ultimoTiempoAlarma: Long = 0
+    // 10 minutos en milisegundos (10 * 60 * 1000)
+    private val INTERVALO_ALARMA = 600000L 
+
     // Configuración de Balón (Valores por defecto: 15kg)
     private var capacidadBalon: Int = 15
     private var pesoTara: Float = 17.0f // Peso aproximado del envase vacío para 15kg
@@ -113,10 +120,8 @@ class MainActivity : AppCompatActivity() {
         btnUsers.setOnClickListener {
             if (miRolActual == "admin" || miRolActual == "distribuidor") {
                 if (miRolActual == "admin") {
-                    // Admin va a la nueva gestión de usuarios
                     startActivity(Intent(this, AdminUsersActivity::class.java))
                 } else {
-                    // Distribuidor ve la lista de clientes en el home
                     mostrarVistaUsuarios()
                     resaltarBoton(btnUsers)
                 }
@@ -141,13 +146,10 @@ class MainActivity : AppCompatActivity() {
 
         btnProfileBottom.setOnClickListener {
             mostrarMenuPerfil()
-            // No resaltamos perfil ya que abre un menú modal
         }
 
-        // Listener imagen perfil header
         findViewById<View>(R.id.imgProfile).setOnClickListener { mostrarMenuPerfil() }
 
-        // Header Info
         val txtHelloUser = findViewById<TextView>(R.id.txtHelloUser)
         if (txtHelloUser != null) {
             val nombre = currentUser?.email?.split("@")?.get(0) ?: "Usuario"
@@ -158,7 +160,7 @@ class MainActivity : AppCompatActivity() {
             actualizarEstadoCompartir(currentUser?.email, isChecked)
         }
         
-        // Listener para Switch Buzzer Test (RTDB)
+        // Listener Manual: Si el usuario lo toca, manda la señal directa
         switchBuzzerTest.setOnCheckedChangeListener { _, isChecked ->
             controlarBuzzerRemoto(isChecked)
         }
@@ -210,18 +212,13 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun resaltarBoton(botonSeleccionado: View) {
-        // Resetear colores (blanco por defecto)
         val colorDefault = ContextCompat.getColor(this, android.R.color.white)
-        val colorSelected = ContextCompat.getColor(this, R.color.accent_blue) // Asumiendo que existe, o usar color hardcoded
+        val colorSelected = ContextCompat.getColor(this, R.color.accent_blue)
 
         btnUsers.setColorFilter(colorDefault)
         btnDevices.setColorFilter(colorDefault)
         btnMetrics.setColorFilter(colorDefault)
         btnProfileBottom.setColorFilter(colorDefault)
-        
-        // btnHome es un CardView, no tiene setColorFilter directo en el view principal
-        // Si quisiéramos cambiar el color del icono dentro de btnHome:
-        // (btnHome.getChildAt(0) as ImageView).setColorFilter(...)
         
         if (botonSeleccionado is ImageView) {
             botonSeleccionado.setColorFilter(colorSelected)
@@ -277,6 +274,9 @@ class MainActivity : AppCompatActivity() {
                         val comparteDatos = document.getBoolean("compartir_datos") ?: false
                         switchCompartir.isChecked = comparteDatos
                         
+                        val kilosConfig = document.getLong("balon_kilos")?.toInt() ?: 15
+                        actualizarConfiguracionBalon(kilosConfig)
+                        
                         actualizarVisibilidadBotonesNav()
                     }
                 } else {
@@ -286,6 +286,17 @@ class MainActivity : AppCompatActivity() {
             .addOnFailureListener { 
                 actualizarVisibilidadBotonesNav()
             }
+    }
+
+    private fun actualizarConfiguracionBalon(kilos: Int) {
+        capacidadBalon = kilos
+        pesoTara = when (kilos) {
+            5 -> 7.0f
+            11 -> 13.5f
+            15 -> 17.0f
+            45 -> 38.0f
+            else -> 17.0f 
+        }
     }
     
     private fun actualizarVisibilidadBotonesNav() {
@@ -319,18 +330,27 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun controlarBuzzerRemoto(encender: Boolean) {
-        // Escribir en /devices/esp8266-001/actuators/buzzerTest
-        // En un sistema real, el deviceId debería ser dinámico o seleccionado de una lista
         val deviceId = "esp8266-001" 
         val ref = rtdb.getReference("devices/$deviceId/actuators/buzzerTest")
         ref.setValue(encender)
-            .addOnSuccessListener { 
-                val estado = if(encender) "Activado" else "Desactivado"
-                Toast.makeText(this, "Buzzer remoto $estado", Toast.LENGTH_SHORT).show() 
-            }
             .addOnFailureListener {
                  Toast.makeText(this, "Error conexión RTDB", Toast.LENGTH_SHORT).show()
             }
+    }
+    
+    // Función para lanzar un pitido corto (3 segundos)
+    private fun activarAlarmaAutomatica() {
+        // 1. Encender
+        controlarBuzzerRemoto(true)
+        Toast.makeText(this, "⚠️ Alarma Automática: Gas Crítico", Toast.LENGTH_LONG).show()
+
+        // 2. Apagar después de 3 segundos
+        Handler(Looper.getMainLooper()).postDelayed({
+            // Solo apagamos si el usuario NO activó el switch manual a propósito
+            if (!switchBuzzerTest.isChecked) {
+                controlarBuzzerRemoto(false)
+            }
+        }, 3000) // 3000ms = 3 segundos de sonido
     }
 
     private fun cargarClientesDisponibles() {
@@ -348,8 +368,6 @@ class MainActivity : AppCompatActivity() {
                     val nivel = doc.getLong("nivel_gas")?.toInt() ?: 0 
                     lista.add(ClienteGas(email, nivel))
                 }
-
-                // ORDENAR LA LISTA: CRÍTICO (0..9) -> ALERTA (10..29) -> NORMAL (30+)
                 lista.sortBy { it.nivelGas }
                 
                 recyclerClientes.adapter = ClientesAdapter(lista) { clienteSeleccionado ->
@@ -390,15 +408,34 @@ class MainActivity : AppCompatActivity() {
 
     private fun procesarMensaje(mensaje: String) {
         try {
-            val peso = mensaje.toFloatOrNull() ?: 0f
-            txtPeso.text = getString(R.string.weight_format, peso.toString())
-            val maxPeso = 15.0f 
-            val porcentaje = ((peso / maxPeso) * 100).toInt().coerceIn(0, 100)
+            var pesoBruto = 0f
+            
+            if (mensaje.trim().startsWith("{")) {
+                val json = JSONObject(mensaje)
+                pesoBruto = json.optDouble("pesoBrutoKg", 0.0).toFloat()
+            } else {
+                pesoBruto = mensaje.toFloatOrNull() ?: 0f
+            }
+
+            val pesoNeto = max(0f, pesoBruto - pesoTara)
+            val pesoMostrar = String.format("%.1f", pesoNeto)
+            txtPeso.text = getString(R.string.weight_format, pesoMostrar)
+            
+            val porcentaje = ((pesoNeto / capacidadBalon) * 100).toInt().coerceIn(0, 100)
             progressBarGas.progress = porcentaje
             
+            // --- LOGICA DE ALARMA ---
             if (porcentaje <= umbralCritico) {
                 layoutAlertaVisual.visibility = View.VISIBLE
                 lanzarNotificacionAlerta(porcentaje)
+                
+                // LOGICA NUEVA: Buzzer Automático cada 10 minutos
+                val ahora = System.currentTimeMillis()
+                if (ahora - ultimoTiempoAlarma > INTERVALO_ALARMA) {
+                    activarAlarmaAutomatica()
+                    ultimoTiempoAlarma = ahora
+                }
+
                 if (miRolActual == "user" && auth.currentUser != null) {
                     actualizarEstadoAlarma(auth.currentUser!!.email, true)
                 }
@@ -408,13 +445,14 @@ class MainActivity : AppCompatActivity() {
                     actualizarEstadoAlarma(auth.currentUser!!.email, false)
                 }
             }
+            // ------------------------
 
             if (miRolActual == "user" && auth.currentUser != null) {
                 guardarNivelEnNube(auth.currentUser!!.email, porcentaje)
             }
             
-        } catch (_: Exception) {
-            // Error parseo
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
     
