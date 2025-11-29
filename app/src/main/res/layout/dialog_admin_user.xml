@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="300dp"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_glass_effect"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/txtDialogTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginBottom="24dp"
+        android:fontFamily="sans-serif-medium"
+        android:text="Gestión de Usuario"
+        android:textColor="@color/text_primary"
+        android:textSize="20sp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="Correo Electrónico"
+        android:textColorHint="@color/text_secondary"
+        app:boxStrokeColor="@color/neon_blue"
+        app:boxStrokeWidth="1dp"
+        app:hintTextColor="@color/neon_blue">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edtDialogEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:inputType="textEmailAddress"
+            android:textColor="@color/text_primary" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:hint="Rol del Usuario"
+        android:textColorHint="@color/text_secondary"
+        app:boxStrokeColor="@color/neon_blue"
+        app:boxStrokeWidth="1dp"
+        app:hintTextColor="@color/neon_blue">
+
+        <AutoCompleteTextView
+            android:id="@+id/spinnerDialogRol"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:inputType="none"
+            android:textColor="@color/text_primary" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDialogSave"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="GUARDAR"
+        android:textColor="@color/bg_app_start"
+        android:textStyle="bold"
+        app:backgroundTint="@color/neon_blue"
+        app:cornerRadius="12dp" />
+
+</LinearLayout>

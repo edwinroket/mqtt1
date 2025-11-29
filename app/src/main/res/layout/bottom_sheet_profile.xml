@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@drawable/bg_glass_effect">
+
+    <!-- Indicador de arrastre -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:background="@color/text_secondary"
+        android:alpha="0.3"
+        android:layout_gravity="center"
+        android:layout_marginBottom="24dp"/>
+
+    <TextView
+        android:id="@+id/txtEmailSheet"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="usuario@email.com"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="32dp"
+        android:layout_gravity="center"/>
+
+    <!-- Botón Configuración (Solo visible para usuarios) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnConfigGas"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Configurar Mi Gas"
+        android:textColor="@color/text_primary"
+        app:backgroundTint="@color/glass_surface"
+        app:cornerRadius="12dp"
+        app:icon="@drawable/ic_devices_rounded"
+        app:iconTint="@color/neon_blue"
+        app:iconGravity="textStart"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- Botón Perfil -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnVerDatos"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Ver Perfil Completo"
+        android:textColor="@color/text_primary"
+        app:backgroundTint="@color/glass_surface"
+        app:cornerRadius="12dp"
+        app:icon="@drawable/ic_profile_rounded"
+        app:iconTint="@color/neon_purple"
+        app:iconGravity="textStart"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Botón Logout -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnLogoutSheet"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="Cerrar Sesión"
+        android:textColor="@color/danger_red"
+        app:backgroundTint="@color/glass_surface"
+        app:cornerRadius="12dp"
+        app:icon="@android:drawable/ic_lock_power_off"
+        app:iconTint="@color/danger_red"
+        app:iconGravity="textStart"/>
+
+</LinearLayout>

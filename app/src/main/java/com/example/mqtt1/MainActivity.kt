@@ -1,28 +1,36 @@
 package com.example.mqtt1
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
-import android.graphics.Color
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
-import android.view.MenuItem
 import android.view.View
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
-import androidx.core.view.GravityCompat
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.cardview.widget.CardView
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.navigation.NavigationView
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
 import org.eclipse.paho.client.mqttv3.*
+import org.json.JSONObject
+import kotlin.math.max
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var mqttClient: MqttClient
     private val serverUri = "tcp://broker.hivemq.com:1883"
@@ -33,42 +41,46 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var txtEstado: TextView
     private lateinit var progressBarGas: ProgressBar
     private lateinit var switchCompartir: SwitchMaterial
-    private lateinit var cardCompartir: View
     private lateinit var layoutModoUsuario: View
+    private lateinit var layoutAlertaVisual: View
 
     // UI Admin/Distribuidor
     private lateinit var txtAdminInfo: TextView
     private lateinit var recyclerClientes: RecyclerView
+    private lateinit var layoutModoAdmin: View
+    private lateinit var switchBuzzerTest: SwitchMaterial
+
+    // Bottom Nav Buttons
+    private lateinit var btnHome: CardView
+    private lateinit var btnUsers: ImageView
+    private lateinit var btnDevices: ImageView
+    private lateinit var btnMetrics: ImageView
+    private lateinit var btnProfileBottom: ImageView
     
     // Estructura App
-    private lateinit var drawerLayout: DrawerLayout
-    private lateinit var navView: NavigationView
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
+    private lateinit var rtdb: FirebaseDatabase
     
     private var miRolActual = "user"
+    private val channelId = "alerta_gas_channel"
+    private val umbralCritico = 10 // 10% para activar el Buzzer
+
+    // Configuración de Balón (Valores por defecto: 15kg)
+    private var capacidadBalon: Int = 15
+    private var pesoTara: Float = 17.0f // Peso aproximado del envase vacío para 15kg
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        crearCanalNotificaciones()
+
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
+        rtdb = FirebaseDatabase.getInstance()
         
         val currentUser = auth.currentUser
-
-        // Toolbar & Drawer
-        val toolbar: Toolbar = findViewById(R.id.toolbar)
-        setSupportActionBar(toolbar)
-        drawerLayout = findViewById(R.id.drawer_layout)
-        navView = findViewById(R.id.nav_view)
-        val toggle = ActionBarDrawerToggle(
-            this, drawerLayout, toolbar, 
-            R.string.navigation_drawer_open, R.string.navigation_drawer_close
-        )
-        drawerLayout.addDrawerListener(toggle)
-        toggle.syncState()
-        navView.setNavigationItemSelectedListener(this)
 
         // Inicializar Vistas
         txtPeso = findViewById(R.id.txtPeso)
@@ -76,47 +88,184 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         progressBarGas = findViewById(R.id.progressBarGas)
         txtAdminInfo = findViewById(R.id.txtAdminInfo)
         switchCompartir = findViewById(R.id.switchCompartir)
-        cardCompartir = findViewById(R.id.cardCompartir)
+        
         layoutModoUsuario = findViewById(R.id.layoutModoUsuario)
+        layoutModoAdmin = findViewById(R.id.layoutModoAdmin)
         recyclerClientes = findViewById(R.id.recyclerClientes)
+        layoutAlertaVisual = findViewById(R.id.layoutAlertaVisual)
+        
+        // Nuevo Switch para el Buzzer
+        switchBuzzerTest = findViewById(R.id.switchBuzzerTest)
 
-        // Configurar Lista Clientes
-        recyclerClientes.layoutManager = LinearLayoutManager(this)
+        // Inicializar Botones Bottom Nav
+        btnHome = findViewById(R.id.btnHome)
+        btnUsers = findViewById(R.id.btnUsers)
+        btnDevices = findViewById(R.id.btnDevices)
+        btnMetrics = findViewById(R.id.btnMetrics)
+        btnProfileBottom = findViewById(R.id.btnProfileBottom)
 
-        // Header Menú
-        val headerView = navView.getHeaderView(0)
-        val txtUserEmail = headerView.findViewById<TextView>(R.id.txtUserEmail)
-        txtUserEmail.text = currentUser?.email ?: "Invitado"
+        // Configurar Listeners Bottom Nav
+        btnHome.setOnClickListener {
+            mostrarVistaInicio()
+            resaltarBoton(btnHome)
+        }
 
-        // Eventos
+        btnUsers.setOnClickListener {
+            if (miRolActual == "admin" || miRolActual == "distribuidor") {
+                if (miRolActual == "admin") {
+                    // Admin va a la nueva gestión de usuarios
+                    startActivity(Intent(this, AdminUsersActivity::class.java))
+                } else {
+                    // Distribuidor ve la lista de clientes en el home
+                    mostrarVistaUsuarios()
+                    resaltarBoton(btnUsers)
+                }
+            } else {
+                Toast.makeText(this, getString(R.string.restricted_access), Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnDevices.setOnClickListener {
+            if (miRolActual == "admin") {
+                mostrarVistaDispositivos()
+                resaltarBoton(btnDevices)
+            } else {
+                Toast.makeText(this, getString(R.string.admin_only), Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnMetrics.setOnClickListener {
+            mostrarVistaMetricas()
+            resaltarBoton(btnMetrics)
+        }
+
+        btnProfileBottom.setOnClickListener {
+            mostrarMenuPerfil()
+            // No resaltamos perfil ya que abre un menú modal
+        }
+
+        // Listener imagen perfil header
+        findViewById<View>(R.id.imgProfile).setOnClickListener { mostrarMenuPerfil() }
+
+        // Header Info
+        val txtHelloUser = findViewById<TextView>(R.id.txtHelloUser)
+        if (txtHelloUser != null) {
+            val nombre = currentUser?.email?.split("@")?.get(0) ?: "Usuario"
+            txtHelloUser.text = getString(R.string.welcome_user_format, nombre.replaceFirstChar { it.uppercase() })
+        }
+
         switchCompartir.setOnCheckedChangeListener { _, isChecked ->
             actualizarEstadoCompartir(currentUser?.email, isChecked)
         }
+        
+        // Listener para Switch Buzzer Test (RTDB)
+        switchBuzzerTest.setOnCheckedChangeListener { _, isChecked ->
+            controlarBuzzerRemoto(isChecked)
+        }
 
-        // Cargar Rol
         verificarRolYPreferencias(currentUser?.email)
         
-        // Back Button
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                    drawerLayout.closeDrawer(GravityCompat.START)
-                } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
-                }
-            }
-        })
-
-        // MQTT solo si eres Usuario
-        if (miRolActual == "user") {
+        if (miRolActual == "user" || miRolActual == "admin") {
             conectarMQTT()
         }
+    }
+    
+    // Vistas
+    private fun mostrarVistaInicio() {
+        layoutModoUsuario.visibility = View.VISIBLE
+        recyclerClientes.visibility = View.GONE
+        layoutModoAdmin.visibility = View.GONE
+        txtAdminInfo.visibility = View.GONE
+    }
+
+    private fun mostrarVistaUsuarios() {
+        layoutModoUsuario.visibility = View.GONE
+        recyclerClientes.visibility = View.VISIBLE
+        layoutModoAdmin.visibility = View.GONE
+        
+        txtAdminInfo.visibility = View.VISIBLE
+        txtAdminInfo.text = if (miRolActual == "distribuidor") getString(R.string.distribuidor_zone) else getString(R.string.admin_users)
+        
+        if (recyclerClientes.adapter == null) {
+             cargarClientesDisponibles()
+        }
+    }
+
+    private fun mostrarVistaDispositivos() {
+        layoutModoUsuario.visibility = View.GONE
+        recyclerClientes.visibility = View.GONE
+        layoutModoAdmin.visibility = View.VISIBLE
+        
+        txtAdminInfo.visibility = View.VISIBLE
+        txtAdminInfo.text = getString(R.string.admin_devices)
+    }
+    
+    private fun mostrarVistaMetricas() {
+        layoutModoUsuario.visibility = View.GONE
+        recyclerClientes.visibility = View.GONE
+        layoutModoAdmin.visibility = View.VISIBLE
+        
+        txtAdminInfo.visibility = View.VISIBLE
+        txtAdminInfo.text = getString(R.string.admin_metrics)
+    }
+    
+    private fun resaltarBoton(botonSeleccionado: View) {
+        // Resetear colores (blanco por defecto)
+        val colorDefault = ContextCompat.getColor(this, android.R.color.white)
+        val colorSelected = ContextCompat.getColor(this, R.color.accent_blue) // Asumiendo que existe, o usar color hardcoded
+
+        btnUsers.setColorFilter(colorDefault)
+        btnDevices.setColorFilter(colorDefault)
+        btnMetrics.setColorFilter(colorDefault)
+        btnProfileBottom.setColorFilter(colorDefault)
+        
+        // btnHome es un CardView, no tiene setColorFilter directo en el view principal
+        // Si quisiéramos cambiar el color del icono dentro de btnHome:
+        // (btnHome.getChildAt(0) as ImageView).setColorFilter(...)
+        
+        if (botonSeleccionado is ImageView) {
+            botonSeleccionado.setColorFilter(colorSelected)
+        }
+    }
+
+    private fun mostrarMenuPerfil() {
+        val dialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_profile, null)
+        
+        val btnConfig = view.findViewById<View>(R.id.btnConfigGas)
+        val btnDatos = view.findViewById<View>(R.id.btnVerDatos)
+        val btnLogout = view.findViewById<View>(R.id.btnLogoutSheet)
+        val txtEmailSheet = view.findViewById<TextView>(R.id.txtEmailSheet)
+        
+        txtEmailSheet.text = auth.currentUser?.email
+        
+        if (miRolActual == "user") {
+            btnConfig.visibility = View.VISIBLE
+            btnConfig.setOnClickListener {
+                startActivity(Intent(this, GasConfActivity::class.java))
+                dialog.dismiss()
+            }
+        } else {
+            btnConfig.visibility = View.GONE
+        }
+        
+        btnDatos.setOnClickListener {
+             startActivity(Intent(this, ProfileActivity::class.java))
+             dialog.dismiss()
+        }
+        
+        btnLogout.setOnClickListener {
+            dialog.dismiss()
+            auth.signOut()
+            finish()
+        }
+        
+        dialog.setContentView(view)
+        dialog.show()
     }
 
     private fun verificarRolYPreferencias(email: String?) {
         if (email == null) return
-        val menu = navView.menu
         
         db.collection("usuarios")
             .whereEqualTo("email", email)
@@ -128,19 +277,32 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         val comparteDatos = document.getBoolean("compartir_datos") ?: false
                         switchCompartir.isChecked = comparteDatos
                         
-                        when (miRolActual) {
-                            "admin" -> activarModoAdmin(email, menu)
-                            "distribuidor" -> activarModoDistribuidor(email, menu)
-                            else -> activarModoUsuario(menu)
-                        }
+                        actualizarVisibilidadBotonesNav()
                     }
                 } else {
-                    activarModoUsuario(menu)
+                    actualizarVisibilidadBotonesNav()
                 }
             }
             .addOnFailureListener { 
-                activarModoUsuario(menu)
+                actualizarVisibilidadBotonesNav()
             }
+    }
+    
+    private fun actualizarVisibilidadBotonesNav() {
+        when (miRolActual) {
+            "admin" -> {
+                btnUsers.visibility = View.VISIBLE
+                btnDevices.visibility = View.VISIBLE
+            }
+            "distribuidor" -> {
+                btnUsers.visibility = View.VISIBLE
+                btnDevices.visibility = View.GONE
+            }
+            else -> {
+                btnUsers.visibility = View.GONE
+                btnDevices.visibility = View.GONE
+            }
+        }
     }
 
     private fun actualizarEstadoCompartir(email: String?, compartir: Boolean) {
@@ -155,64 +317,25 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
             }
     }
-
-    // --- MODOS DE VISTA ---
-
-    private fun activarModoAdmin(email: String, menu: android.view.Menu) {
-        layoutModoUsuario.visibility = View.VISIBLE
-        recyclerClientes.visibility = View.GONE
-        
-        txtAdminInfo.visibility = View.VISIBLE
-        txtAdminInfo.text = "ADMINISTRADOR: $email"
-        txtAdminInfo.setBackgroundColor(Color.parseColor("#FFEB3B")) 
-        txtAdminInfo.setTextColor(Color.parseColor("#D32F2F"))
-        
-        cardCompartir.visibility = View.GONE
-        
-        // Admin NO VE "Mi Gas" (porque no consume, gestiona)
-        menu.findItem(R.id.nav_gas_config).isVisible = false 
-        
-        menu.findItem(R.id.nav_admin_users).isVisible = true
-        menu.findItem(R.id.nav_admin_devices).isVisible = true
-        
-        conectarMQTT() 
-    }
-
-    private fun activarModoDistribuidor(email: String, menu: android.view.Menu) {
-        layoutModoUsuario.visibility = View.GONE
-        recyclerClientes.visibility = View.VISIBLE
-
-        txtAdminInfo.visibility = View.VISIBLE
-        txtAdminInfo.text = "MODO DISTRIBUIDOR"
-        txtAdminInfo.setBackgroundColor(Color.parseColor("#E3F2FD"))
-        txtAdminInfo.setTextColor(Color.parseColor("#1565C0"))
-
-        // Distribuidor NO VE "Mi Gas"
-        menu.findItem(R.id.nav_gas_config).isVisible = false
-        
-        menu.findItem(R.id.nav_admin_users).isVisible = false 
-        menu.findItem(R.id.nav_admin_devices).isVisible = false
-        
-        cargarClientesDisponibles() 
-    }
-
-    private fun activarModoUsuario(menu: android.view.Menu) {
-        miRolActual = "user"
-        layoutModoUsuario.visibility = View.VISIBLE
-        recyclerClientes.visibility = View.GONE
-        txtAdminInfo.visibility = View.GONE
-        cardCompartir.visibility = View.VISIBLE 
-        
-        // Usuario SÍ VE "Mi Gas"
-        menu.findItem(R.id.nav_gas_config).isVisible = true 
-        
-        menu.findItem(R.id.nav_admin_users).isVisible = false
-        menu.findItem(R.id.nav_admin_devices).isVisible = false
-        
-        conectarMQTT()
+    
+    private fun controlarBuzzerRemoto(encender: Boolean) {
+        // Escribir en /devices/esp8266-001/actuators/buzzerTest
+        // En un sistema real, el deviceId debería ser dinámico o seleccionado de una lista
+        val deviceId = "esp8266-001" 
+        val ref = rtdb.getReference("devices/$deviceId/actuators/buzzerTest")
+        ref.setValue(encender)
+            .addOnSuccessListener { 
+                val estado = if(encender) "Activado" else "Desactivado"
+                Toast.makeText(this, "Buzzer remoto $estado", Toast.LENGTH_SHORT).show() 
+            }
+            .addOnFailureListener {
+                 Toast.makeText(this, "Error conexión RTDB", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun cargarClientesDisponibles() {
+        recyclerClientes.layoutManager = GridLayoutManager(this, 2)
+        
         db.collection("usuarios")
             .whereEqualTo("compartir_datos", true) 
             .whereEqualTo("rol", "user")           
@@ -225,11 +348,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     val nivel = doc.getLong("nivel_gas")?.toInt() ?: 0 
                     lista.add(ClienteGas(email, nivel))
                 }
+
+                // ORDENAR LA LISTA: CRÍTICO (0..9) -> ALERTA (10..29) -> NORMAL (30+)
+                lista.sortBy { it.nivelGas }
                 
                 recyclerClientes.adapter = ClientesAdapter(lista) { clienteSeleccionado ->
                     val intent = Intent(this, DetalleClienteActivity::class.java)
                     intent.putExtra("email_cliente", clienteSeleccionado.email)
-                    intent.putExtra("es_admin", miRolActual == "admin") // Le pasamos si somos admin
+                    intent.putExtra("es_admin", miRolActual == "admin") 
                     startActivity(intent)
                 }
             }
@@ -238,14 +364,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun conectarMQTT() {
         if (::mqttClient.isInitialized && mqttClient.isConnected) return
         
-        actualizarEstado("Conectando...")
         Thread {
             try {
                 mqttClient = MqttClient(serverUri, "android-${System.currentTimeMillis()}", null)
                 val options = MqttConnectOptions().apply { isCleanSession = true }
                 
                 mqttClient.setCallback(object : MqttCallback {
-                    override fun connectionLost(cause: Throwable?) { actualizarEstado("Desconectado") }
+                    override fun connectionLost(cause: Throwable?) { runOnUiThread { txtEstado.text = getString(R.string.estado_desconectado) } }
                     override fun messageArrived(topic: String?, message: MqttMessage?) {
                         runOnUiThread { procesarMensaje(message.toString()) }
                     }
@@ -255,11 +380,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 mqttClient.connect(options)
                 if (mqttClient.isConnected) {
                     mqttClient.subscribe(topicoGas, 0)
-                    actualizarEstado("En línea")
+                    runOnUiThread { txtEstado.text = getString(R.string.estado_conectado) }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                actualizarEstado("Error Conexión")
             }
         }.start()
     }
@@ -267,17 +391,67 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun procesarMensaje(mensaje: String) {
         try {
             val peso = mensaje.toFloatOrNull() ?: 0f
-            txtPeso.text = "$peso kg"
+            txtPeso.text = getString(R.string.weight_format, peso.toString())
             val maxPeso = 15.0f 
             val porcentaje = ((peso / maxPeso) * 100).toInt().coerceIn(0, 100)
             progressBarGas.progress = porcentaje
             
+            if (porcentaje <= umbralCritico) {
+                layoutAlertaVisual.visibility = View.VISIBLE
+                lanzarNotificacionAlerta(porcentaje)
+                if (miRolActual == "user" && auth.currentUser != null) {
+                    actualizarEstadoAlarma(auth.currentUser!!.email, true)
+                }
+            } else {
+                layoutAlertaVisual.visibility = View.GONE
+                if (miRolActual == "user" && auth.currentUser != null) {
+                    actualizarEstadoAlarma(auth.currentUser!!.email, false)
+                }
+            }
+
             if (miRolActual == "user" && auth.currentUser != null) {
                 guardarNivelEnNube(auth.currentUser!!.email, porcentaje)
             }
             
-        } catch (e: Exception) {
-            txtPeso.text = mensaje
+        } catch (_: Exception) {
+            // Error parseo
+        }
+    }
+    
+    private fun crearCanalNotificaciones() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "Alerta Gas Crítico"
+            val descriptionText = "Notificaciones cuando el gas está por agotarse"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val channel = NotificationChannel(channelId, name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun lanzarNotificacionAlerta(nivelActual: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+        }
+
+        val builder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("⚠️ ALERTA CRÍTICA DE GAS")
+            .setContentText("Nivel bajo ($nivelActual%). Alarma activa.")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+
+        with(NotificationManagerCompat.from(this)) {
+            notify(1, builder.build())
         }
     }
 
@@ -288,53 +462,27 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             .get()
             .addOnSuccessListener { documents ->
                 for (doc in documents) {
+                    val userRef = db.collection("usuarios").document(doc.id)
+                    userRef.update("nivel_gas", nivel)
+                    val metricas = mapOf(
+                        "nivel" to nivel,
+                        "fecha" to Timestamp.now()
+                    )
+                    userRef.collection("historial_mediciones").add(metricas)
+                }
+            }
+    }
+    
+    private fun actualizarEstadoAlarma(email: String?, activar: Boolean) {
+        if (email == null) return
+        db.collection("usuarios")
+            .whereEqualTo("email", email)
+            .get()
+            .addOnSuccessListener { documents ->
+                for (doc in documents) {
                     db.collection("usuarios").document(doc.id)
-                        .update("nivel_gas", nivel)
+                        .update("alarma_activa", activar)
                 }
             }
-    }
-    
-    private fun actualizarEstado(estado: String) {
-        runOnUiThread { txtEstado.text = estado }
-    }
-    
-    override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.nav_home -> {
-                // Si es Admin, "Home" vuelve al Dashboard normal
-                if (miRolActual == "admin") {
-                    layoutModoUsuario.visibility = View.VISIBLE
-                    recyclerClientes.visibility = View.GONE
-                }
-            }
-            R.id.nav_profile -> {
-                startActivity(Intent(this, ProfileActivity::class.java))
-            }
-            R.id.nav_gas_config -> {
-                startActivity(Intent(this, GasConfActivity::class.java))
-            }
-            R.id.nav_admin_users -> {
-                // Admin queriendo ver la lista de clientes
-                layoutModoUsuario.visibility = View.GONE
-                recyclerClientes.visibility = View.VISIBLE
-                cargarClientesDisponibles()
-                Toast.makeText(this, "Vista de Clientes Activa", Toast.LENGTH_SHORT).show()
-            }
-            R.id.nav_admin_devices -> Toast.makeText(this, "Gestión de Balones", Toast.LENGTH_SHORT).show()
-            R.id.nav_logout -> cerrarSesion()
-        }
-        drawerLayout.closeDrawer(GravityCompat.START)
-        return true
-    }
-
-    private fun cerrarSesion() {
-        try {
-            if (::mqttClient.isInitialized && mqttClient.isConnected) mqttClient.disconnect()
-        } catch (e: Exception) { }
-        auth.signOut()
-        startActivity(Intent(this, LoginActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        })
-        finish()
     }
 }

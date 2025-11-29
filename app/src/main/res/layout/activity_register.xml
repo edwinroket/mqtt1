@@ -1,82 +1,137 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
     android:padding="32dp"
-    android:background="#FFFFFF">
+    android:background="@drawable/bg_gradient">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- Contenedor Glass Principal -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Crear Cuenta"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:textColor="#333333"
-        android:layout_marginBottom="8dp"/>
+        android:orientation="vertical"
+        android:background="@drawable/bg_glass_effect"
+        android:padding="32dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Regístrate para empezar"
-        android:textSize="16sp"
-        android:textColor="#888888"
-        android:layout_marginBottom="48dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Crear Cuenta"
+            android:textSize="34sp"
+            android:fontFamily="sans-serif-black"
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="8dp"
+            android:layout_gravity="center"/>
 
-    <!-- Campo Email -->
-    <EditText
-        android:id="@+id/edtEmailReg"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:background="@android:drawable/edit_text"
-        android:hint="Correo Electrónico"
-        android:inputType="textEmailAddress"
-        android:paddingStart="12dp"
-        android:layout_marginBottom="16dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Regístrate para empezar"
+            android:textSize="14sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginBottom="48dp"
+            android:layout_gravity="center"/>
 
-    <!-- Campo Contraseña -->
-    <EditText
-        android:id="@+id/edtPassReg"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:background="@android:drawable/edit_text"
-        android:hint="Contraseña"
-        android:inputType="textPassword"
-        android:paddingStart="12dp"
-        android:layout_marginBottom="16dp"/>
+        <!-- Campo Email -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="16dp"
+            android:textColorHint="@color/text_secondary"
+            app:boxStrokeColor="@color/neon_blue"
+            app:boxStrokeWidth="1dp"
+            app:hintTextColor="@color/neon_blue"
+            app:startIconDrawable="@drawable/ic_email_rounded"
+            app:startIconTint="@color/neon_purple">
 
-    <!-- Campo Confirmar Contraseña -->
-    <EditText
-        android:id="@+id/edtPassConfReg"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:background="@android:drawable/edit_text"
-        android:hint="Confirmar Contraseña"
-        android:inputType="textPassword"
-        android:paddingStart="12dp"
-        android:layout_marginBottom="32dp"/>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtEmailReg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Correo Electrónico"
+                android:inputType="textEmailAddress"
+                android:textColor="@color/text_primary"
+                android:background="@android:color/transparent"/>
+        </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Botón Registrar -->
-    <Button
-        android:id="@+id/btnRegister"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="REGISTRARME"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:backgroundTint="#009688"
-        android:textColor="#FFFFFF"/>
+        <!-- Campo Contraseña -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="16dp"
+            android:textColorHint="@color/text_secondary"
+            app:boxStrokeColor="@color/neon_blue"
+            app:boxStrokeWidth="1dp"
+            app:hintTextColor="@color/neon_blue"
+            app:startIconDrawable="@drawable/ic_lock_rounded"
+            app:startIconTint="@color/neon_purple"
+            app:endIconMode="password_toggle"
+            app:endIconTint="@color/text_secondary">
 
-    <!-- Volver al Login -->
-    <TextView
-        android:id="@+id/txtBackLogin"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="¿Ya tienes cuenta? Inicia Sesión"
-        android:textColor="#009688"
-        android:layout_marginTop="24dp"
-        android:clickable="true"
-        android:focusable="true"/>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtPassReg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Contraseña"
+                android:inputType="textPassword"
+                android:textColor="@color/text_primary"
+                android:background="@android:color/transparent"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Campo Confirmar Contraseña -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_marginBottom="32dp"
+            android:textColorHint="@color/text_secondary"
+            app:boxStrokeColor="@color/neon_blue"
+            app:boxStrokeWidth="1dp"
+            app:hintTextColor="@color/neon_blue"
+            app:startIconDrawable="@drawable/ic_lock_rounded"
+            app:startIconTint="@color/neon_purple"
+            app:endIconMode="password_toggle"
+            app:endIconTint="@color/text_secondary">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edtPassConfReg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Confirmar Contraseña"
+                android:inputType="textPassword"
+                android:textColor="@color/text_primary"
+                android:background="@android:color/transparent"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Botón Registrar -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRegister"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="REGISTRARME"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/bg_app_start"
+            app:backgroundTint="@color/neon_blue"
+            app:cornerRadius="12dp"/>
+
+        <!-- Volver al Login -->
+        <TextView
+            android:id="@+id/txtBackLogin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="¿Ya tienes cuenta? Inicia Sesión"
+            android:textColor="@color/neon_cyan"
+            android:layout_marginTop="24dp"
+            android:layout_gravity="center"
+            android:clickable="true"
+            android:focusable="true"/>
+
+    </LinearLayout>
 
 </LinearLayout>

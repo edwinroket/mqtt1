@@ -2,4 +2,52 @@
     <string name="app_name">Mqtt Gas Monitor</string>
     <string name="navigation_drawer_open">Abrir menú de navegación</string>
     <string name="navigation_drawer_close">Cerrar menú de navegación</string>
+    <string name="welcome_user_format">Hola, %1$s</string>
+    
+    <!-- Strings extraídos para MainActivity -->
+    <string name="estado_conectado">Conectado</string>
+    <string name="estado_desconectado">Desconectado</string>
+    <string name="admin_panel">PANEL DE CONTROL</string>
+    <string name="distribuidor_zone">ZONA DE REPARTO</string>
+    <string name="admin_users">GESTIÓN DE USUARIOS</string>
+    <string name="admin_devices">DISPOSITIVOS IOT</string>
+    <string name="admin_metrics">MÉTRICAS AVANZADAS</string>
+    <string name="restricted_access">Acceso restringido</string>
+    <string name="admin_only">Solo administradores</string>
+    <string name="weight_format">%1$skg</string>
+    
+    <!-- Login & Register -->
+    <string name="welcome_title">Bienvenido</string>
+    <string name="welcome_subtitle">Inicia sesión para monitorear tu gas</string>
+    <string name="email_hint">Correo Electrónico</string>
+    <string name="password_hint">Contraseña</string>
+    <string name="login_button">INGRESAR</string>
+    <string name="register_prompt">¿No tienes cuenta? Regístrate aquí</string>
+    
+    <string name="create_account">Crear Cuenta</string>
+    <string name="register_subtitle">Regístrate para empezar</string>
+    <string name="confirm_password_hint">Confirmar Contraseña</string>
+    <string name="register_button">REGISTRARME</string>
+    <string name="login_prompt">¿Ya tienes cuenta? Inicia Sesión</string>
+
+    <!-- Profile -->
+    <string name="edit_profile_title">Editar Perfil</string>
+    <string name="name_hint">Nombre Completo / Empresa</string>
+    <string name="phone_hint">Teléfono de Contacto</string>
+    <string name="address_hint">Dirección Principal</string>
+    <string name="reference_hint">Referencia (Opcional)</string>
+    <string name="reference_helper">Ej: Casa esquina reja azul, frente a la plaza.</string>
+    <string name="save_changes">Guardar Cambios</string>
+    
+    <!-- Client Detail -->
+    <string name="client_file_title">Ficha del Cliente</string>
+    <string name="gas_level_title">Nivel de Gas Actual</string>
+    <string name="contact_data_title">Datos de Contacto</string>
+    <string name="equipment_info_title">Información del Equipo</string>
+    <string name="name_format">Nombre: %1$s</string>
+    <string name="address_format">Dirección: %1$s</string>
+    <string name="phone_format">Teléfono: %1$s</string>
+    <string name="balloon_format">Balón: %1$d kg</string>
+    <string name="company_format">Empresa: %1$s</string>
+    <string name="installed_date_format">Instalado el: %1$s</string>
 </resources>

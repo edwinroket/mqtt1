@@ -2,4 +2,39 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <!-- Paleta Moderna IoT -->
+    <color name="bg_app_start">#0F172A</color> <!-- Azul oscuro profundo -->
+    <color name="bg_app_end">#1E293B</color>   <!-- Gris azulado -->
+    
+    <color name="neon_blue">#38BDF8</color>
+    <color name="neon_cyan">#22D3EE</color>    <!-- Nuevo Cyan -->
+    <color name="neon_purple">#A78BFA</color>
+    <color name="neon_green">#4ADE80</color>
+    <color name="danger_red">#F87171</color>
+    
+    <!-- Header Gradients -->
+    <color name="header_start">#38BDF8</color> <!-- Neon Blue -->
+    <color name="header_end">#818CF8</color>   <!-- Indigo Soft -->
+    
+    <!-- Colores de Texto -->
+    <color name="text_primary">#F1F5F9</color>
+    <color name="text_secondary">#94A3B8</color>
+    
+    <!-- Glassmorphism -->
+    <color name="glass_surface">#1AFFFFFF</color> <!-- 10% Blanco -->
+    <color name="glass_border">#26FFFFFF</color>  <!-- 15% Blanco -->
+    <color name="glass_highlight">#40FFFFFF</color>
+    
+    <!-- Legacy mappings (para compatibilidad) -->
+    <color name="bg_app">@color/bg_app_start</color>
+    <color name="primary_dark">@color/neon_blue</color>
+    <color name="text_dark">@color/text_primary</color>
+    <color name="text_gray">@color/text_secondary</color>
+    <color name="accent_blue">@color/neon_blue</color>
+    <color name="accent_cyan">@color/neon_cyan</color> <!-- Mapping faltante -->
+    <color name="status_warning">#FBBF24</color>
+    <color name="status_critical">@color/danger_red</color>
+    <color name="status_good">@color/neon_green</color>
+    <color name="accent_violet">@color/neon_purple</color>
 </resources>
