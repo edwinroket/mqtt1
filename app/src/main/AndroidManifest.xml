@@ -22,10 +22,10 @@
         android:theme="@style/Theme.Mqtt1"
         tools:targetApi="31">
         
-        <!-- Google Maps API Key -->
+        <!-- Google Maps API Key (inyectada por Gradle) -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBRZJ9B6E1joXXhM3W9QpD_f0-khgcijxw"/>
+            android:value="${MAPS_API_KEY}"/>
         
         <activity
             android:name=".LoginActivity"
@@ -48,6 +48,12 @@
         <activity android:name=".DetalleClienteActivity" android:parentActivityName=".MainActivity"/>
         
         <activity android:name=".AdminUsersActivity" android:parentActivityName=".MainActivity"/>
+        
+        <!-- ACTIVIDAD MAP PICKER (SELECTOR DE UBICACIÓN) -->
+        <activity 
+            android:name=".MapPickerActivity" 
+            android:parentActivityName=".ProfileActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/> 
 
     </application>
 

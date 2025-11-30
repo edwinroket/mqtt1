@@ -1,12 +1,14 @@
 package com.example.mqtt1
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
-import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -27,6 +29,16 @@ class ProfileActivity : AppCompatActivity() {
     
     private var miRolActual = "user"
 
+    // Lanzador para el selector de mapa
+    private val mapPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val address = result.data?.getStringExtra("address")
+            if (!address.isNullOrEmpty()) {
+                edtDireccion.setText(address)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
@@ -43,6 +55,14 @@ class ProfileActivity : AppCompatActivity() {
         containerAddress = findViewById(R.id.containerAddress)
         containerCompany = findViewById(R.id.containerCompany)
         btnGuardar = findViewById(R.id.btnSaveProfile)
+
+        // Configurar campo de dirección para abrir el mapa
+        // Hacemos que no sea focusable para que el teclado no salte, sino el mapa
+        edtDireccion.isFocusable = false
+        edtDireccion.setOnClickListener {
+            val intent = Intent(this, MapPickerActivity::class.java)
+            mapPickerLauncher.launch(intent)
+        }
 
         cargarDatosUsuario()
 

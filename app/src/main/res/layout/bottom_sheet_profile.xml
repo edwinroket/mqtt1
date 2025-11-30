@@ -5,13 +5,13 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="24dp"
-    android:background="@drawable/bg_glass_effect">
+    android:background="@drawable/bg_bottom_sheet_solid"> <!-- Cambio aquí: Fondo sólido -->
 
     <!-- Indicador de arrastre -->
     <View
         android:layout_width="40dp"
         android:layout_height="4dp"
-        android:background="@color/text_secondary"
+        android:background="#FFFFFF"
         android:alpha="0.3"
         android:layout_gravity="center"
         android:layout_marginBottom="24dp"/>
@@ -23,7 +23,7 @@
         android:text="usuario@email.com"
         android:textSize="16sp"
         android:textStyle="bold"
-        android:textColor="@color/text_primary"
+        android:textColor="#FFFFFF"
         android:layout_marginBottom="32dp"
         android:layout_gravity="center"/>
 
@@ -33,8 +33,8 @@
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:text="Configurar Mi Gas"
-        android:textColor="@color/text_primary"
-        app:backgroundTint="@color/glass_surface"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="#2A2D3E"
         app:cornerRadius="12dp"
         app:icon="@drawable/ic_devices_rounded"
         app:iconTint="@color/neon_blue"
@@ -47,8 +47,8 @@
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:text="Ver Perfil Completo"
-        android:textColor="@color/text_primary"
-        app:backgroundTint="@color/glass_surface"
+        android:textColor="#FFFFFF"
+        app:backgroundTint="#2A2D3E"
         app:cornerRadius="12dp"
         app:icon="@drawable/ic_profile_rounded"
         app:iconTint="@color/neon_purple"
@@ -62,7 +62,7 @@
         android:layout_height="60dp"
         android:text="Cerrar Sesión"
         android:textColor="@color/danger_red"
-        app:backgroundTint="@color/glass_surface"
+        app:backgroundTint="#2A2D3E"
         app:cornerRadius="12dp"
         app:icon="@android:drawable/ic_lock_power_off"
         app:iconTint="@color/danger_red"
