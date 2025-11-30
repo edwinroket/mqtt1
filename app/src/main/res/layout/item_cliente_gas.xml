@@ -1,81 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
+<androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/cardCliente"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="0dp"
-    app:strokeWidth="2dp"
-    app:strokeColor="@color/glass_border"
-    app:cardBackgroundColor="@color/glass_surface">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="#1E1E2C">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <ImageView
-            android:id="@+id/imgIcon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_profile_rounded"
-            app:tint="@color/neon_blue"
-            android:background="@drawable/bg_glass_effect"
-            android:padding="8dp"
+        <!-- Avatar Circular -->
+        <FrameLayout
+            android:id="@+id/avatarContainer"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_circle_gradient"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintBottom_toBottomOf="parent">
 
+            <TextView
+                android:id="@+id/txtInitial"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="U"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_gravity="center"/>
+        </FrameLayout>
+
+        <!-- Información Principal -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="8dp"
-            app:layout_constraintStart_toEndOf="@id/imgIcon"
-            app:layout_constraintEnd_toStartOf="@id/txtEstadoAlerta"
+            app:layout_constraintStart_toEndOf="@id/avatarContainer"
+            app:layout_constraintEnd_toStartOf="@id/statusChip"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
 
             <TextView
-                android:id="@+id/txtEmailCliente"
+                android:id="@+id/txtClienteEmail"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="cliente@ejemplo.com"
-                android:textStyle="bold"
+                android:text="usuario@email.com"
+                android:textColor="@android:color/white"
                 android:textSize="14sp"
-                android:textColor="@color/text_primary"
+                android:textStyle="bold"
                 android:ellipsize="end"
                 android:maxLines="1"/>
 
-            <TextView
-                android:id="@+id/txtNivelGasCliente"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Nivel de Gas: 0%"
-                android:textSize="12sp"
-                android:textColor="@color/text_secondary"
-                android:layout_marginTop="4dp"/>
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_gas_tank" 
+                    app:tint="#AAAAAA"
+                    android:layout_marginEnd="4dp"/>
+
+                <TextView
+                    android:id="@+id/txtNivelGas"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="45%"
+                    android:textColor="#00E5FF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"/>
+            </LinearLayout>
         </LinearLayout>
 
+        <!-- Chip de Estado -->
         <TextView
-            android:id="@+id/txtEstadoAlerta"
+            android:id="@+id/statusChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="NORMAL"
-            android:textStyle="bold"
             android:textSize="10sp"
-            android:paddingHorizontal="8dp"
+            android:textStyle="bold"
+            android:textColor="#1E1E2C"
+            android:paddingHorizontal="12dp"
             android:paddingVertical="4dp"
-            android:background="@drawable/bg_glass_effect"
-            android:textColor="@color/neon_green"
+            android:background="@drawable/bg_status_chip_green"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-</com.google.android.material.card.MaterialCardView>
+</androidx.cardview.widget.CardView>

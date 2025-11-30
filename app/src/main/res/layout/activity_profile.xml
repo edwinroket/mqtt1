@@ -1,142 +1,206 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient">
+    android:background="#F2F5F8"
+    android:fillViewport="true">
 
-    <com.google.android.material.appbar.AppBarLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        app:elevation="0dp">
+        android:paddingBottom="40dp">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbarProfile"
+        <!-- Header / Foto -->
+        <View
+            android:id="@+id/headerProfile"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/bg_app_start"
-            app:title="Editar Perfil"
-            app:titleTextColor="@color/text_primary"
-            app:navigationIcon="@drawable/ic_home_rounded"/> 
-            <!-- Nota: Debería ser un icono de atrás, pero usaremos home_rounded si no hay otro, o android:drawable/ic_menu_revert con tint -->
-    </com.google.android.material.appbar.AppBarLayout>
+            android:layout_height="200dp"
+            android:background="@drawable/bg_curve_header"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardProfilePic"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            app:cardCornerRadius="60dp"
+            app:cardElevation="10dp"
+            android:layout_marginTop="60dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
+            <ImageView
+                android:id="@+id/imgProfileEdit"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/ic_launcher"
+                android:background="#E0E0E0"/>
+            
+            <ImageView
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@android:drawable/ic_menu_camera"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="10dp"
+                app:tint="#555"/>
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:id="@+id/lblEditProfile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Editar Perfil"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#333"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/cardProfilePic"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- FORMULARIO -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="24dp"
+            app:layout_constraintTop_toBottomOf="@id/lblEditProfile">
 
-            <!-- Tarjeta de Datos Glass -->
+            <!-- Nombre -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nombre Completo"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+            
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/white"
+                android:layout_marginBottom="16dp">
+                <EditText
+                    android:id="@+id/edtProfileName"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:hint="Tu nombre"
+                    android:paddingHorizontal="16dp"
+                    android:drawableEnd="@android:drawable/ic_menu_myplaces"
+                    android:drawableTint="#AAA"
+                    android:inputType="textPersonName"/>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Telefono -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Teléfono"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/white"
+                android:layout_marginBottom="16dp">
+                <EditText
+                    android:id="@+id/edtProfilePhone"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:hint="+56 9 1234 5678"
+                    android:paddingHorizontal="16dp"
+                    android:drawableEnd="@android:drawable/ic_menu_call"
+                    android:drawableTint="#AAA"
+                    android:inputType="phone"/>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Dirección (Visible para User/Distribuidor) -->
             <LinearLayout
+                android:id="@+id/containerAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Dirección (GPS)"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/white"
+                    android:layout_marginBottom="16dp">
+                    <EditText
+                        android:id="@+id/edtProfileAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@null"
+                        android:hint="Calle Falsa 123"
+                        android:paddingHorizontal="16dp"
+                        android:drawableEnd="@drawable/ic_map_placeholder"
+                        android:drawableTint="#AAA"
+                        android:inputType="textPostalAddress"/>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+            <!-- Empresa (Solo Distribuidor) -->
+            <LinearLayout
+                android:id="@+id/containerCompany"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/bg_glass_effect"
-                android:padding="24dp"
-                android:layout_marginBottom="32dp">
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
+                android:visibility="gone">
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_marginBottom="16dp"
-                    android:textColorHint="@color/text_secondary"
-                    app:boxStrokeColor="@color/neon_blue"
-                    app:boxStrokeWidth="1dp"
-                    app:hintTextColor="@color/neon_blue">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/edtNombre"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Nombre Completo / Empresa"
-                        android:inputType="textPersonName"
-                        android:textColor="@color/text_primary"
-                        android:background="@android:color/transparent"/>
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
+                    android:text="Nombre de Empresa"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
+                <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_marginBottom="16dp"
-                    android:textColorHint="@color/text_secondary"
-                    app:boxStrokeColor="@color/neon_blue"
-                    app:boxStrokeWidth="1dp"
-                    app:hintTextColor="@color/neon_blue">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/edtTelefono"
+                    android:layout_height="50dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/white"
+                    android:layout_marginBottom="16dp">
+                    <EditText
+                        android:id="@+id/edtProfileCompany"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Teléfono de Contacto"
-                        android:inputType="phone"
-                        android:textColor="@color/text_primary"
-                        android:background="@android:color/transparent"/>
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_marginBottom="16dp"
-                    android:textColorHint="@color/text_secondary"
-                    app:boxStrokeColor="@color/neon_blue"
-                    app:boxStrokeWidth="1dp"
-                    app:hintTextColor="@color/neon_blue">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/edtDireccion"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Dirección Principal"
-                        android:inputType="textPostalAddress"
-                        android:textColor="@color/text_primary"
-                        android:background="@android:color/transparent"/>
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Referencia -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    helperText="Ej: Casa esquina reja azul, frente a la plaza."
-                    helperTextTextColor="@color/text_secondary"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_marginBottom="8dp"
-                    android:textColorHint="@color/text_secondary"
-                    app:boxStrokeColor="@color/neon_blue"
-                    app:boxStrokeWidth="1dp"
-                    app:hintTextColor="@color/neon_blue">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/edtReferencia"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Referencia (Opcional)"
-                        android:inputType="textMultiLine"
-                        android:lines="2"
-                        android:textColor="@color/text_primary"
-                        android:background="@android:color/transparent"/>
-                </com.google.android.material.textfield.TextInputLayout>
-
+                        android:layout_height="match_parent"
+                        android:background="@null"
+                        android:hint="Ej: Gas Express"
+                        android:paddingHorizontal="16dp"
+                        android:inputType="text"/>
+                </androidx.cardview.widget.CardView>
             </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnGuardarPerfil"
+            <!-- Botón Guardar -->
+            <Button
+                android:id="@+id/btnSaveProfile"
                 android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="Guardar Cambios"
+                android:layout_height="55dp"
+                android:text="Actualizar Perfil"
+                android:textAllCaps="false"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                android:textColor="@color/bg_app_start"
-                app:backgroundTint="@color/neon_green"
-                app:cornerRadius="12dp"/>
+                android:textColor="@color/white"
+                android:backgroundTint="@color/neon_blue"
+                app:cornerRadius="12dp"
+                android:layout_marginTop="20dp"/>
 
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

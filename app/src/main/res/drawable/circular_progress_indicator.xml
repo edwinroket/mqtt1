@@ -3,13 +3,17 @@
     android:fromDegrees="270"
     android:toDegrees="270">
     <shape
+        android:innerRadiusRatio="2.5"
         android:shape="ring"
-        android:thicknessRatio="12"
+        android:thickness="8dp"
         android:useLevel="true">
         <gradient
-            android:startColor="@color/accent_blue"
-            android:endColor="@color/accent_cyan"
-            android:type="sweep" />
-        <corners android:radius="50dp"/>
+            android:angle="0"
+            android:endColor="@color/neon_blue"
+            android:startColor="@color/neon_purple"
+            android:type="sweep"
+            android:useLevel="false" />
+        <corners android:radius="5dp" />
+        <solid android:color="@color/neon_cyan"/>
     </shape>
 </rotate>

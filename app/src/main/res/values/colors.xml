@@ -1,40 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Colores Base (Tema Oscuro/Moderno) -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     
-    <!-- Paleta Moderna IoT -->
-    <color name="bg_app_start">#0F172A</color> <!-- Azul oscuro profundo -->
-    <color name="bg_app_end">#1E293B</color>   <!-- Gris azulado -->
+    <!-- Gradientes de Fondo -->
+    <color name="bg_app_start">#0F2027</color> <!-- Azul Oscuro Profundo -->
+    <color name="bg_app_center">#203A43</color>
+    <color name="bg_app_end">#2C5364</color>   <!-- Azul Grisaceo -->
     
-    <color name="neon_blue">#38BDF8</color>
-    <color name="neon_cyan">#22D3EE</color>    <!-- Nuevo Cyan -->
-    <color name="neon_purple">#A78BFA</color>
-    <color name="neon_green">#4ADE80</color>
-    <color name="danger_red">#F87171</color>
+    <color name="primary_dark">#0F2027</color>
+    <color name="header_start">#0F2027</color>
+    <color name="header_end">#2C5364</color>
+
+    <!-- Colores Neón (Acentos) -->
+    <color name="neon_blue">#00F2FF</color>
+    <color name="neon_purple">#BC13FE</color>
+    <color name="neon_green">#00FF9D</color>
+    <color name="neon_cyan">#00E5FF</color>
+    <color name="accent_blue">#2979FF</color>
+    <color name="accent_cyan">#00E5FF</color>
+
+    <!-- Estados de Semáforo -->
+    <color name="status_good">#00E676</color>
+    <color name="status_warning">#FFEA00</color>
+    <color name="status_critical">#FF1744</color>
+    <color name="danger_red">#D50000</color>
+
+    <!-- Textos -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B0BEC5</color>
+    <color name="text_hint">#78909C</color>
+
+    <!-- UI Elements -->
+    <color name="input_field_bg">#1AFFFFFF</color> <!-- Transparente -->
+    <color name="card_background">#26FFFFFF</color> <!-- Efecto Glass -->
     
-    <!-- Header Gradients -->
-    <color name="header_start">#38BDF8</color> <!-- Neon Blue -->
-    <color name="header_end">#818CF8</color>   <!-- Indigo Soft -->
-    
-    <!-- Colores de Texto -->
-    <color name="text_primary">#F1F5F9</color>
-    <color name="text_secondary">#94A3B8</color>
-    
-    <!-- Glassmorphism -->
-    <color name="glass_surface">#1AFFFFFF</color> <!-- 10% Blanco -->
-    <color name="glass_border">#26FFFFFF</color>  <!-- 15% Blanco -->
-    <color name="glass_highlight">#40FFFFFF</color>
-    
-    <!-- Legacy mappings (para compatibilidad) -->
-    <color name="bg_app">@color/bg_app_start</color>
-    <color name="primary_dark">@color/neon_blue</color>
-    <color name="text_dark">@color/text_primary</color>
-    <color name="text_gray">@color/text_secondary</color>
-    <color name="accent_blue">@color/neon_blue</color>
-    <color name="accent_cyan">@color/neon_cyan</color> <!-- Mapping faltante -->
-    <color name="status_warning">#FBBF24</color>
-    <color name="status_critical">@color/danger_red</color>
-    <color name="status_good">@color/neon_green</color>
-    <color name="accent_violet">@color/neon_purple</color>
+    <color name="glass_surface">#26FFFFFF</color>
+    <color name="glass_border">#33FFFFFF</color>
 </resources>

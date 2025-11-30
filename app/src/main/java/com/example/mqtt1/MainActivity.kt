@@ -1,81 +1,122 @@
 package com.example.mqtt1
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.data.PieData
+import com.github.mikephil.charting.data.PieDataSet
+import com.github.mikephil.charting.data.PieEntry
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import org.eclipse.paho.client.mqttv3.*
 import org.json.JSONObject
 import kotlin.math.max
+import com.example.mqtt1.R
 
-class MainActivity : AppCompatActivity() {
+// Google Maps
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 
+class MainActivity : AppCompatActivity(), OnMapReadyCallback {
+
+    // --- MQTT ---
     private lateinit var mqttClient: MqttClient
     private val serverUri = "tcp://broker.hivemq.com:1883"
     private val topicoGas = "gastracer/gas/peso"
 
-    // UI Usuario
-    private lateinit var txtPeso: TextView
-    private lateinit var txtEstado: TextView
-    private lateinit var progressBarGas: ProgressBar
-    private lateinit var switchCompartir: SwitchMaterial
-    private lateinit var layoutModoUsuario: View
-    private lateinit var layoutAlertaVisual: View
+    // --- VISTAS PRINCIPALES ---
+    private lateinit var layoutUsuario: View
+    private lateinit var layoutAdmin: View
+    private lateinit var layoutDistribuidor: View
+    private lateinit var layoutMapaGlobal: View // NUEVO: Vista compartida
 
-    // UI Admin/Distribuidor
-    private lateinit var txtAdminInfo: TextView
-    private lateinit var recyclerClientes: RecyclerView
-    private lateinit var layoutModoAdmin: View
-    private lateinit var switchBuzzerTest: SwitchMaterial
+    // --- UI MODO USUARIO ---
+    private lateinit var tvPeso: TextView
+    private lateinit var tvEstado: TextView
+    private lateinit var tvPorcentaje: TextView
+    private lateinit var progressGas: ProgressBar
+    private lateinit var swCompartir: SwitchMaterial
+    private lateinit var layoutAlerta: View
+    private lateinit var tvDiasRestantes: TextView
+    private lateinit var chartUser: LineChart
 
-    // Bottom Nav Buttons
-    private lateinit var btnHome: CardView
-    private lateinit var btnUsers: ImageView
-    private lateinit var btnDevices: ImageView
-    private lateinit var btnMetrics: ImageView
-    private lateinit var btnProfileBottom: ImageView
+    // --- UI MODO ADMIN ---
+    private lateinit var tvTotalClientes: TextView
+    private lateinit var tvTotalAlertas: TextView
+    private lateinit var pieChartAdmin: PieChart
+
+    // --- UI MODO DISTRIBUIDOR ---
+    private lateinit var rvDistribuidor: RecyclerView
+
+    // --- MAPA GLOBAL UI ---
+    private lateinit var lblMapTitle: TextView
+    private lateinit var recyclerMapList: RecyclerView
+    private var googleMap: GoogleMap? = null
+
+    // --- UI COMÚN ---
+    private lateinit var rvClientes: RecyclerView 
+    private lateinit var swBuzzer: SwitchMaterial
+    private lateinit var btnLogoutTop: ImageButton
+
+    // --- BOTTOM NAV ---
+    private lateinit var navHome: ImageView
+    private lateinit var navUsers: ImageView
+    private lateinit var navDevices: ImageView
+    private lateinit var navMetrics: ImageView
+    private lateinit var navProfile: ImageView
     
-    // Estructura App
+    // --- FIREBASE & UTILS ---
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
     private lateinit var rtdb: FirebaseDatabase
     
     private var miRolActual = "user"
     private val channelId = "alerta_gas_channel"
-    private val umbralCritico = 10 // 10% para activar el Buzzer
+    private val umbralCritico = 10 
+    private val LOCATION_PERMISSION_REQUEST_CODE = 1001
 
-    // Lógica de Alarma Temporizada
     private var ultimoTiempoAlarma: Long = 0
-    // 10 minutos en milisegundos (10 * 60 * 1000)
     private val INTERVALO_ALARMA = 600000L 
 
-    // Configuración de Balón (Valores por defecto: 15kg)
     private var capacidadBalon: Int = 15
-    private var pesoTara: Float = 17.0f // Peso aproximado del envase vacío para 15kg
+    private var pesoTara: Float = 0.0f 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,144 +128,594 @@ class MainActivity : AppCompatActivity() {
         db = FirebaseFirestore.getInstance()
         rtdb = FirebaseDatabase.getInstance()
         
+        inicializarVistas()
+        configurarListeners()
+        
+        // Inicializar Mapa
+        val mapFragment = supportFragmentManager.findFragmentById(R.id.mapFragment) as? SupportMapFragment
+        mapFragment?.getMapAsync(this)
+        
         val currentUser = auth.currentUser
-
-        // Inicializar Vistas
-        txtPeso = findViewById(R.id.txtPeso)
-        txtEstado = findViewById(R.id.txtEstado)
-        progressBarGas = findViewById(R.id.progressBarGas)
-        txtAdminInfo = findViewById(R.id.txtAdminInfo)
-        switchCompartir = findViewById(R.id.switchCompartir)
-        
-        layoutModoUsuario = findViewById(R.id.layoutModoUsuario)
-        layoutModoAdmin = findViewById(R.id.layoutModoAdmin)
-        recyclerClientes = findViewById(R.id.recyclerClientes)
-        layoutAlertaVisual = findViewById(R.id.layoutAlertaVisual)
-        
-        // Nuevo Switch para el Buzzer
-        switchBuzzerTest = findViewById(R.id.switchBuzzerTest)
-
-        // Inicializar Botones Bottom Nav
-        btnHome = findViewById(R.id.btnHome)
-        btnUsers = findViewById(R.id.btnUsers)
-        btnDevices = findViewById(R.id.btnDevices)
-        btnMetrics = findViewById(R.id.btnMetrics)
-        btnProfileBottom = findViewById(R.id.btnProfileBottom)
-
-        // Configurar Listeners Bottom Nav
-        btnHome.setOnClickListener {
-            mostrarVistaInicio()
-            resaltarBoton(btnHome)
+        if (currentUser != null) {
+            val txtHelloUser = findViewById<TextView>(R.id.txtHelloUser)
+            val nombre = currentUser.email?.split("@")?.get(0) ?: "Usuario"
+            txtHelloUser.text = getString(R.string.welcome_user_format, nombre.replaceFirstChar { it.uppercase() })
+            
+            verificarRolYPreferencias(currentUser.email)
+        } else {
+            mostrarVistaUsuario()
         }
+    }
 
-        btnUsers.setOnClickListener {
-            if (miRolActual == "admin" || miRolActual == "distribuidor") {
-                if (miRolActual == "admin") {
-                    startActivity(Intent(this, AdminUsersActivity::class.java))
-                } else {
-                    mostrarVistaUsuarios()
-                    resaltarBoton(btnUsers)
-                }
-            } else {
-                Toast.makeText(this, getString(R.string.restricted_access), Toast.LENGTH_SHORT).show()
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+        enableMyLocation()
+        
+        // Configuración inicial (Santiago)
+        val santiago = LatLng(-33.4489, -70.6693)
+        googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(santiago, 10f))
+    }
+    
+    private fun enableMyLocation() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            googleMap?.isMyLocationEnabled = true
+            googleMap?.uiSettings?.isMyLocationButtonEnabled = true
+        } else {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
+        }
+    }
+    
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                enableMyLocation()
             }
         }
+    }
 
-        btnDevices.setOnClickListener {
+    private fun inicializarVistas() {
+        // Layouts
+        layoutUsuario = findViewById(R.id.layoutModoUsuario)
+        layoutAdmin = findViewById(R.id.layoutModoAdmin)
+        layoutDistribuidor = findViewById(R.id.layoutModoDistribuidor)
+        layoutMapaGlobal = findViewById(R.id.layoutMapaGlobal) // Nuevo
+
+        // Usuario UI
+        tvPeso = findViewById(R.id.txtPeso)
+        tvEstado = findViewById(R.id.txtEstado)
+        tvPorcentaje = findViewById(R.id.txtPorcentajeCentro)
+        progressGas = findViewById(R.id.progressBarGas)
+        swCompartir = findViewById(R.id.switchCompartir)
+        layoutAlerta = findViewById(R.id.layoutAlertaVisual)
+        tvDiasRestantes = findViewById(R.id.txtDiasRestantes)
+        chartUser = findViewById(R.id.chartUsuario)
+        swBuzzer = findViewById(R.id.switchBuzzerTest)
+
+        // Admin UI
+        tvTotalClientes = findViewById(R.id.txtTotalClientes)
+        tvTotalAlertas = findViewById(R.id.txtTotalAlertas)
+        pieChartAdmin = findViewById(R.id.chartAdminEstado)
+        rvClientes = findViewById(R.id.recyclerClientes)
+
+        // Distribuidor UI
+        rvDistribuidor = findViewById(R.id.recyclerDistribuidor)
+        
+        // Mapa Global UI
+        lblMapTitle = findViewById(R.id.lblMapTitle)
+        recyclerMapList = findViewById(R.id.recyclerMapList)
+        
+        // Botón Superior
+        btnLogoutTop = findViewById(R.id.btnNotif)
+
+        // Nav Buttons
+        navHome = findViewById(R.id.btnHome)
+        navUsers = findViewById(R.id.btnUsers)
+        navDevices = findViewById(R.id.btnDevices)
+        navMetrics = findViewById(R.id.btnMetrics)
+        navProfile = findViewById(R.id.btnProfileBottom)
+
+        configurarGraficoUsuario()
+        configurarGraficoAdmin()
+    }
+
+    private fun configurarListeners() {
+        btnLogoutTop.setOnClickListener {
+            auth.signOut()
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+        }
+
+        navHome.setOnClickListener {
+            when (miRolActual) {
+                "admin" -> mostrarVistaAdmin()
+                "distribuidor" -> mostrarVistaDistribuidor()
+                else -> mostrarVistaUsuario()
+            }
+            resaltarBoton(navHome)
+        }
+
+        navUsers.setOnClickListener {
             if (miRolActual == "admin") {
-                mostrarVistaDispositivos()
-                resaltarBoton(btnDevices)
+                startActivity(Intent(this, AdminUsersActivity::class.java))
+            } else if (miRolActual == "distribuidor") {
+                // El distribuidor ve su lista "Home" como lista principal
+                mostrarVistaDistribuidor()
             } else {
-                Toast.makeText(this, getString(R.string.admin_only), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Opción no disponible", Toast.LENGTH_SHORT).show()
             }
+            resaltarBoton(navUsers)
         }
 
-        btnMetrics.setOnClickListener {
-            mostrarVistaMetricas()
-            resaltarBoton(btnMetrics)
+        navMetrics.setOnClickListener {
+            if (miRolActual == "admin") {
+                mostrarVistaAdmin()
+            } else {
+                Toast.makeText(this, "Opción para Administradores", Toast.LENGTH_SHORT).show()
+            }
+            resaltarBoton(navMetrics)
         }
 
-        btnProfileBottom.setOnClickListener {
+        // LOGICA BOTÓN DISPOSITIVOS / MAPA
+        navDevices.setOnClickListener {
+            // Todos tienen acceso al mapa, pero ven cosas distintas
+            mostrarVistaMapa()
+            resaltarBoton(navDevices)
+        }
+
+        navProfile.setOnClickListener { 
             mostrarMenuPerfil()
+            resaltarBoton(navProfile)
         }
-
+        
         findViewById<View>(R.id.imgProfile).setOnClickListener { mostrarMenuPerfil() }
 
-        val txtHelloUser = findViewById<TextView>(R.id.txtHelloUser)
-        if (txtHelloUser != null) {
-            val nombre = currentUser?.email?.split("@")?.get(0) ?: "Usuario"
-            txtHelloUser.text = getString(R.string.welcome_user_format, nombre.replaceFirstChar { it.uppercase() })
-        }
-
-        switchCompartir.setOnCheckedChangeListener { _, isChecked ->
-            actualizarEstadoCompartir(currentUser?.email, isChecked)
+        swCompartir.setOnCheckedChangeListener { _, isChecked ->
+            actualizarEstadoCompartir(auth.currentUser?.email, isChecked)
         }
         
-        // Listener Manual: Si el usuario lo toca, manda la señal directa
-        switchBuzzerTest.setOnCheckedChangeListener { _, isChecked ->
+        swBuzzer.setOnCheckedChangeListener { _, isChecked ->
             controlarBuzzerRemoto(isChecked)
         }
-
-        verificarRolYPreferencias(currentUser?.email)
-        
-        if (miRolActual == "user" || miRolActual == "admin") {
-            conectarMQTT()
-        }
     }
     
-    // Vistas
-    private fun mostrarVistaInicio() {
-        layoutModoUsuario.visibility = View.VISIBLE
-        recyclerClientes.visibility = View.GONE
-        layoutModoAdmin.visibility = View.GONE
-        txtAdminInfo.visibility = View.GONE
-    }
-
-    private fun mostrarVistaUsuarios() {
-        layoutModoUsuario.visibility = View.GONE
-        recyclerClientes.visibility = View.VISIBLE
-        layoutModoAdmin.visibility = View.GONE
-        
-        txtAdminInfo.visibility = View.VISIBLE
-        txtAdminInfo.text = if (miRolActual == "distribuidor") getString(R.string.distribuidor_zone) else getString(R.string.admin_users)
-        
-        if (recyclerClientes.adapter == null) {
-             cargarClientesDisponibles()
-        }
-    }
-
-    private fun mostrarVistaDispositivos() {
-        layoutModoUsuario.visibility = View.GONE
-        recyclerClientes.visibility = View.GONE
-        layoutModoAdmin.visibility = View.VISIBLE
-        
-        txtAdminInfo.visibility = View.VISIBLE
-        txtAdminInfo.text = getString(R.string.admin_devices)
-    }
-    
-    private fun mostrarVistaMetricas() {
-        layoutModoUsuario.visibility = View.GONE
-        recyclerClientes.visibility = View.GONE
-        layoutModoAdmin.visibility = View.VISIBLE
-        
-        txtAdminInfo.visibility = View.VISIBLE
-        txtAdminInfo.text = getString(R.string.admin_metrics)
-    }
-    
-    private fun resaltarBoton(botonSeleccionado: View) {
+    private fun resaltarBoton(boton: ImageView) {
         val colorDefault = ContextCompat.getColor(this, android.R.color.white)
-        val colorSelected = ContextCompat.getColor(this, R.color.accent_blue)
+        val colorSelected = Color.parseColor("#00F2FF") 
 
-        btnUsers.setColorFilter(colorDefault)
-        btnDevices.setColorFilter(colorDefault)
-        btnMetrics.setColorFilter(colorDefault)
-        btnProfileBottom.setColorFilter(colorDefault)
+        navHome.setColorFilter(colorDefault)
+        navUsers.setColorFilter(colorDefault)
+        navDevices.setColorFilter(colorDefault)
+        navMetrics.setColorFilter(colorDefault)
+        navProfile.setColorFilter(colorDefault)
         
-        if (botonSeleccionado is ImageView) {
-            botonSeleccionado.setColorFilter(colorSelected)
+        boton.setColorFilter(colorSelected)
+    }
+
+    // --- LÓGICA DE ROLES Y VISTAS ---
+
+    private fun verificarRolYPreferencias(email: String?) {
+        if (email == null) return
+        
+        db.collection("usuarios")
+            .whereEqualTo("email", email)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty) {
+                    for (document in documents) {
+                        miRolActual = document.getString("rol") ?: "user"
+                        
+                        if (miRolActual == "user") {
+                            val comparteDatos = document.getBoolean("compartir_datos") ?: false
+                            swCompartir.isChecked = comparteDatos
+                            val kilosConfig = document.getLong("balon_kilos")?.toInt() ?: 15
+                            actualizarConfiguracionBalon(kilosConfig)
+                        }
+
+                        when (miRolActual) {
+                            "admin" -> {
+                                mostrarVistaAdmin()
+                                cargarDatosAdmin()
+                            }
+                            "distribuidor" -> {
+                                mostrarVistaDistribuidor()
+                                cargarDatosDistribuidor()
+                            }
+                            else -> {
+                                mostrarVistaUsuario()
+                                conectarMQTT()
+                                cargarDatosGraficoUsuario(email)
+                            }
+                        }
+                    }
+                }
+            }
+    }
+
+    private fun mostrarVistaUsuario() {
+        layoutUsuario.visibility = View.VISIBLE
+        layoutAdmin.visibility = View.GONE
+        layoutDistribuidor.visibility = View.GONE
+        layoutMapaGlobal.visibility = View.GONE
+        resaltarBoton(navHome)
+    }
+
+    private fun mostrarVistaAdmin() {
+        layoutUsuario.visibility = View.GONE
+        layoutAdmin.visibility = View.VISIBLE
+        layoutDistribuidor.visibility = View.GONE
+        layoutMapaGlobal.visibility = View.GONE
+        resaltarBoton(navHome)
+    }
+
+    private fun mostrarVistaDistribuidor() {
+        layoutUsuario.visibility = View.GONE
+        layoutAdmin.visibility = View.GONE
+        layoutDistribuidor.visibility = View.VISIBLE
+        layoutMapaGlobal.visibility = View.GONE
+        resaltarBoton(navHome)
+    }
+    
+    // --- NUEVA FUNCION: VISTA MAPA GLOBAL ---
+    private fun mostrarVistaMapa() {
+        layoutUsuario.visibility = View.GONE
+        layoutAdmin.visibility = View.GONE
+        layoutDistribuidor.visibility = View.GONE
+        layoutMapaGlobal.visibility = View.VISIBLE
+        
+        // Configurar según Rol
+        when (miRolActual) {
+            "admin" -> {
+                lblMapTitle.text = "UBICACIÓN DE CLIENTES (ADMIN)"
+                cargarMapaAdmin()
+            }
+            "user" -> {
+                lblMapTitle.text = "DISTRIBUIDORES CERCANOS"
+                cargarMapaUsuario()
+            }
+            "distribuidor" -> {
+                lblMapTitle.text = "MI RUTA DE ENTREGA"
+                cargarDatosDistribuidor(esMapaGlobal = true) // Reutilizamos lógica
+            }
+        }
+    }
+    
+    // --- LOGICA MAPA: ADMIN (Ve todos los clientes) ---
+    private fun cargarMapaAdmin() {
+        recyclerMapList.layoutManager = LinearLayoutManager(this)
+        googleMap?.clear()
+        
+        db.collection("usuarios")
+            .whereEqualTo("rol", "user")
+            .get()
+            .addOnSuccessListener { documents ->
+                val lista = ArrayList<ClienteGas>()
+                
+                for (doc in documents) {
+                    val email = doc.getString("email") ?: ""
+                    val nivel = doc.getLong("nivel_gas")?.toInt() ?: 0
+                    lista.add(ClienteGas(email, nivel))
+                    
+                    // Simulación GPS
+                    val latBase = -33.4489
+                    val lngBase = -70.6693
+                    val randomLat = latBase + (Math.random() - 0.5) * 0.1
+                    val randomLng = lngBase + (Math.random() - 0.5) * 0.1
+                    
+                    val colorMarker = when {
+                         nivel < 10 -> BitmapDescriptorFactory.HUE_RED
+                         nivel < 30 -> BitmapDescriptorFactory.HUE_YELLOW
+                         else -> BitmapDescriptorFactory.HUE_GREEN
+                    }
+                    
+                    googleMap?.addMarker(MarkerOptions()
+                        .position(LatLng(randomLat, randomLng))
+                        .title("$email ($nivel%)")
+                        .icon(BitmapDescriptorFactory.defaultMarker(colorMarker)))
+                }
+                
+                // Lista inferior simple
+                recyclerMapList.adapter = ClientesAdapter(lista) {
+                    val intent = Intent(this, DetalleClienteActivity::class.java)
+                    intent.putExtra("email_cliente", it.email)
+                    intent.putExtra("es_admin", true)
+                    startActivity(intent)
+                }
+            }
+    }
+    
+    // --- LOGICA MAPA: USUARIO (Ve Distribuidores) ---
+    private fun cargarMapaUsuario() {
+        recyclerMapList.layoutManager = LinearLayoutManager(this)
+        googleMap?.clear()
+        
+        db.collection("usuarios")
+            .whereEqualTo("rol", "distribuidor")
+            .get()
+            .addOnSuccessListener { documents ->
+                // Aunque usemos ClienteGas, aquí representa Distribuidores para simplificar el Adapter
+                val listaDistribuidores = ArrayList<ClienteGas>()
+                
+                for (doc in documents) {
+                    val empresa = doc.getString("empresa_nombre") ?: "Distribuidor Independiente"
+                    val email = doc.getString("email") ?: ""
+                    // Usamos 'nivel' como placeholder, no aplica realmente
+                    listaDistribuidores.add(ClienteGas(empresa, 100)) 
+                    
+                    // Simulación GPS Distribuidor
+                    val latBase = -33.4489
+                    val lngBase = -70.6693
+                    val randomLat = latBase + (Math.random() - 0.5) * 0.08
+                    val randomLng = lngBase + (Math.random() - 0.5) * 0.08
+                    
+                    googleMap?.addMarker(MarkerOptions()
+                        .position(LatLng(randomLat, randomLng))
+                        .title(empresa)
+                        .snippet(email)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))) // Azul para camiones
+                }
+                
+                // Mostrar lista simple
+                recyclerMapList.adapter = ClientesAdapter(listaDistribuidores) {
+                    // Al clickear distribuidor, quizás solo mostrar un Toast por ahora
+                    Toast.makeText(this, "Distribuidor: ${it.email}", Toast.LENGTH_SHORT).show()
+                }
+            }
+    }
+
+    // --- LÓGICA ADMIN ---
+    private fun cargarDatosAdmin() {
+        db.collection("usuarios")
+            .whereEqualTo("rol", "user")
+            .addSnapshotListener { snapshots, e ->
+                if (e != null || snapshots == null) return@addSnapshotListener
+
+                var totalClientes = 0
+                var alertasCriticas = 0
+                var alertasWarning = 0
+                var normal = 0
+
+                for (doc in snapshots) {
+                    totalClientes++
+                    val nivel = doc.getLong("nivel_gas")?.toInt() ?: 0
+                    when {
+                        nivel < 10 -> alertasCriticas++
+                        nivel < 30 -> alertasWarning++
+                        else -> normal++
+                    }
+                }
+
+                tvTotalClientes.text = totalClientes.toString()
+                tvTotalAlertas.text = alertasCriticas.toString()
+
+                actualizarGraficoPastel(normal, alertasWarning, alertasCriticas)
+            }
+    }
+
+    private fun configurarGraficoAdmin() {
+        pieChartAdmin.description.isEnabled = false
+        pieChartAdmin.legend.isEnabled = false
+        pieChartAdmin.setHoleColor(Color.TRANSPARENT)
+        pieChartAdmin.setEntryLabelColor(Color.WHITE)
+    }
+
+    private fun actualizarGraficoPastel(normal: Int, warning: Int, critico: Int) {
+        val entries = ArrayList<PieEntry>()
+        if (normal > 0) entries.add(PieEntry(normal.toFloat(), "Bien"))
+        if (warning > 0) entries.add(PieEntry(warning.toFloat(), "Bajo"))
+        if (critico > 0) entries.add(PieEntry(critico.toFloat(), "Crítico"))
+
+        val dataSet = PieDataSet(entries, "")
+        dataSet.colors = listOf(
+            Color.parseColor("#00E676"), 
+            Color.parseColor("#FFEA00"), 
+            Color.parseColor("#FF1744")
+        )
+        dataSet.valueTextColor = Color.BLACK
+        dataSet.valueTextSize = 14f
+
+        val data = PieData(dataSet)
+        pieChartAdmin.data = data
+        pieChartAdmin.invalidate()
+    }
+
+    // --- LÓGICA DISTRIBUIDOR ---
+    private fun cargarDatosDistribuidor(esMapaGlobal: Boolean = false) {
+        // Si es mapa global, usamos el recycler del mapa, sino el de la vista home distribuidor
+        val targetRecycler = if (esMapaGlobal) recyclerMapList else rvDistribuidor
+        targetRecycler.layoutManager = LinearLayoutManager(this)
+        
+        db.collection("usuarios")
+            .whereEqualTo("rol", "user")
+            .whereLessThan("nivel_gas", 30)
+            .addSnapshotListener { snapshots, e ->
+                if (e != null || snapshots == null) return@addSnapshotListener
+                
+                if (esMapaGlobal) googleMap?.clear() 
+
+                val listaPrioridad = ArrayList<ClienteGas>()
+                
+                for (doc in snapshots) {
+                    val email = doc.getString("email") ?: "Sin email"
+                    val nivel = doc.getLong("nivel_gas")?.toInt() ?: 0 
+                    listaPrioridad.add(ClienteGas(email, nivel))
+                    
+                    if (esMapaGlobal) {
+                        val latBase = -33.4489
+                        val lngBase = -70.6693
+                        val randomLat = latBase + (Math.random() - 0.5) * 0.1
+                        val randomLng = lngBase + (Math.random() - 0.5) * 0.1
+                        
+                        val colorMarker = if (nivel < 10) BitmapDescriptorFactory.HUE_RED else BitmapDescriptorFactory.HUE_YELLOW
+                        
+                        googleMap?.addMarker(MarkerOptions()
+                            .position(LatLng(randomLat, randomLng))
+                            .title("$email ($nivel%)")
+                            .icon(BitmapDescriptorFactory.defaultMarker(colorMarker)))
+                    }
+                }
+                listaPrioridad.sortBy { it.nivelGas }
+
+                targetRecycler.adapter = ClientesAdapter(listaPrioridad) { cliente ->
+                    val intent = Intent(this, DetalleClienteActivity::class.java)
+                    intent.putExtra("email_cliente", cliente.email)
+                    intent.putExtra("es_admin", true)
+                    startActivity(intent)
+                }
+            }
+    }
+
+    // --- LÓGICA USUARIO ---
+    private fun configurarGraficoUsuario() {
+        chartUser.description.isEnabled = false
+        chartUser.setTouchEnabled(true)
+        chartUser.setDrawGridBackground(false)
+        chartUser.axisRight.isEnabled = false
+        chartUser.xAxis.position = XAxis.XAxisPosition.BOTTOM
+        chartUser.xAxis.textColor = Color.WHITE
+        chartUser.axisLeft.textColor = Color.WHITE
+        chartUser.legend.isEnabled = false
+    }
+
+    private fun cargarDatosGraficoUsuario(email: String?) {
+        if (email == null) return
+        
+        db.collection("usuarios")
+            .whereEqualTo("email", email)
+            .get()
+            .addOnSuccessListener { documents ->
+                for (doc in documents) {
+                     doc.reference.collection("historial_mediciones")
+                        .orderBy("fecha", Query.Direction.DESCENDING)
+                        .limit(10)
+                        .get()
+                        .addOnSuccessListener { snapshots ->
+                            val entries = ArrayList<Entry>()
+                            var index = 0f
+                            for (shot in snapshots.reversed()) {
+                                val nivel = shot.getDouble("nivel")?.toFloat() ?: 0f
+                                entries.add(Entry(index, nivel))
+                                index++
+                            }
+                            
+                            if (entries.isNotEmpty()) {
+                                val dataSet = LineDataSet(entries, "Consumo")
+                                dataSet.color = Color.CYAN
+                                dataSet.setDrawFilled(true)
+                                dataSet.fillColor = Color.CYAN
+                                dataSet.fillAlpha = 50
+                                dataSet.valueTextColor = Color.WHITE
+                                
+                                chartUser.data = LineData(dataSet)
+                                chartUser.invalidate()
+                                calcularEstimacionDias(entries)
+                            }
+                        }
+                }
+            }
+    }
+
+    private fun calcularEstimacionDias(entries: List<Entry>) {
+        if (entries.size < 2) {
+            tvDiasRestantes.text = "-- Días"
+            return
+        }
+        val primerNivel = entries.first().y
+        val ultimoNivel = entries.last().y
+        val perdida = primerNivel - ultimoNivel
+        
+        if (perdida > 0) {
+            val consumoPorPunto = perdida / (entries.size - 1)
+            val diasRestantes = (ultimoNivel / consumoPorPunto).toInt()
+            tvDiasRestantes.text = "~$diasRestantes Días Estimados"
+        } else {
+            tvDiasRestantes.text = "> 30 Días"
         }
     }
 
+    // --- MQTT ---
+    private fun conectarMQTT() {
+        if (::mqttClient.isInitialized && mqttClient.isConnected) return
+        Thread {
+            try {
+                mqttClient = MqttClient(serverUri, "android-${System.currentTimeMillis()}", null)
+                val options = MqttConnectOptions().apply { isCleanSession = true }
+                mqttClient.setCallback(object : MqttCallback {
+                    override fun connectionLost(cause: Throwable?) { runOnUiThread { tvEstado.text = getString(R.string.estado_desconectado) } }
+                    override fun messageArrived(topic: String?, message: MqttMessage?) {
+                        runOnUiThread { procesarMensaje(message.toString()) }
+                    }
+                    override fun deliveryComplete(token: IMqttDeliveryToken?) {}
+                })
+                mqttClient.connect(options)
+                if (mqttClient.isConnected) {
+                    mqttClient.subscribe(topicoGas, 0)
+                    runOnUiThread { tvEstado.text = getString(R.string.estado_conectado) }
+                }
+            } catch (e: Exception) { e.printStackTrace() }
+        }.start()
+    }
+
+    private fun procesarMensaje(mensaje: String) {
+        try {
+            var pesoBruto = 0f
+            if (mensaje.trim().startsWith("{")) {
+                val json = JSONObject(mensaje)
+                pesoBruto = json.optDouble("pesoBrutoKg", 0.0).toFloat()
+            } else {
+                pesoBruto = mensaje.toFloatOrNull() ?: 0f
+            }
+
+            val pesoNeto = max(0f, pesoBruto - pesoTara)
+            val pesoMostrar = String.format("%.1f", pesoNeto)
+            tvPeso.text = getString(R.string.weight_format, pesoMostrar)
+            
+            val porcentaje = ((pesoNeto / capacidadBalon) * 100).toInt().coerceIn(0, 100)
+            progressGas.progress = porcentaje
+            tvPorcentaje.text = "$porcentaje%"
+
+            // SEMÁFORO
+            val colorState: Int
+            val textState: String
+
+            when {
+                porcentaje > 30 -> {
+                    colorState = Color.parseColor("#00E676") 
+                    textState = "Estado: Normal"
+                    layoutAlerta.visibility = View.GONE
+                    actualizarEstadoAlarma(auth.currentUser?.email, false)
+                }
+                porcentaje > 10 -> {
+                    colorState = Color.parseColor("#FFEA00") 
+                    textState = "Estado: Advertencia"
+                    layoutAlerta.visibility = View.GONE
+                    actualizarEstadoAlarma(auth.currentUser?.email, false)
+                }
+                else -> {
+                    colorState = Color.parseColor("#FF1744") 
+                    textState = "Estado: CRÍTICO"
+                    layoutAlerta.visibility = View.VISIBLE
+                    
+                    val ahora = System.currentTimeMillis()
+                    if (ahora - ultimoTiempoAlarma > INTERVALO_ALARMA) {
+                        activarAlarmaAutomatica()
+                        ultimoTiempoAlarma = ahora
+                    }
+                    lanzarNotificacionAlerta(porcentaje)
+                    actualizarEstadoAlarma(auth.currentUser?.email, true)
+                }
+            }
+
+            tvEstado.text = textState
+            tvEstado.setTextColor(colorState)
+            progressGas.progressDrawable.setTint(colorState)
+
+            guardarNivelEnNube(auth.currentUser?.email, porcentaje)
+            
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    // --- UTILS ---
     private fun mostrarMenuPerfil() {
         val dialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_profile, null)
@@ -261,266 +752,62 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun verificarRolYPreferencias(email: String?) {
-        if (email == null) return
-        
-        db.collection("usuarios")
-            .whereEqualTo("email", email)
-            .get()
-            .addOnSuccessListener { documents ->
-                if (!documents.isEmpty) {
-                    for (document in documents) {
-                        miRolActual = document.getString("rol") ?: "user"
-                        val comparteDatos = document.getBoolean("compartir_datos") ?: false
-                        switchCompartir.isChecked = comparteDatos
-                        
-                        val kilosConfig = document.getLong("balon_kilos")?.toInt() ?: 15
-                        actualizarConfiguracionBalon(kilosConfig)
-                        
-                        actualizarVisibilidadBotonesNav()
-                    }
-                } else {
-                    actualizarVisibilidadBotonesNav()
-                }
-            }
-            .addOnFailureListener { 
-                actualizarVisibilidadBotonesNav()
-            }
-    }
-
     private fun actualizarConfiguracionBalon(kilos: Int) {
         capacidadBalon = kilos
-        pesoTara = when (kilos) {
-            5 -> 7.0f
-            11 -> 13.5f
-            15 -> 17.0f
-            45 -> 38.0f
-            else -> 17.0f 
-        }
+        pesoTara = 0.0f 
     }
     
-    private fun actualizarVisibilidadBotonesNav() {
-        when (miRolActual) {
-            "admin" -> {
-                btnUsers.visibility = View.VISIBLE
-                btnDevices.visibility = View.VISIBLE
-            }
-            "distribuidor" -> {
-                btnUsers.visibility = View.VISIBLE
-                btnDevices.visibility = View.GONE
-            }
-            else -> {
-                btnUsers.visibility = View.GONE
-                btnDevices.visibility = View.GONE
-            }
-        }
-    }
-
     private fun actualizarEstadoCompartir(email: String?, compartir: Boolean) {
         if (email == null) return
-        db.collection("usuarios")
-            .whereEqualTo("email", email)
-            .get()
-            .addOnSuccessListener { documents ->
-                for (document in documents) {
-                    db.collection("usuarios").document(document.id)
-                        .update("compartir_datos", compartir)
-                }
-            }
+        db.collection("usuarios").whereEqualTo("email", email).get()
+            .addOnSuccessListener { for (doc in it) doc.reference.update("compartir_datos", compartir) }
     }
     
     private fun controlarBuzzerRemoto(encender: Boolean) {
-        val deviceId = "esp8266-001" 
-        val ref = rtdb.getReference("devices/$deviceId/actuators/buzzerTest")
-        ref.setValue(encender)
-            .addOnFailureListener {
-                 Toast.makeText(this, "Error conexión RTDB", Toast.LENGTH_SHORT).show()
-            }
+        rtdb.getReference("devices/esp8266-001/actuators/buzzerTest").setValue(encender)
     }
     
-    // Función para lanzar un pitido corto (3 segundos)
     private fun activarAlarmaAutomatica() {
-        // 1. Encender
         controlarBuzzerRemoto(true)
-        Toast.makeText(this, "⚠️ Alarma Automática: Gas Crítico", Toast.LENGTH_LONG).show()
-
-        // 2. Apagar después de 3 segundos
-        Handler(Looper.getMainLooper()).postDelayed({
-            // Solo apagamos si el usuario NO activó el switch manual a propósito
-            if (!switchBuzzerTest.isChecked) {
-                controlarBuzzerRemoto(false)
-            }
-        }, 3000) // 3000ms = 3 segundos de sonido
+        Toast.makeText(this, "⚠️ Alarma Automática", Toast.LENGTH_LONG).show()
+        Handler(Looper.getMainLooper()).postDelayed({ controlarBuzzerRemoto(false) }, 8000) 
     }
 
-    private fun cargarClientesDisponibles() {
-        recyclerClientes.layoutManager = GridLayoutManager(this, 2)
-        
-        db.collection("usuarios")
-            .whereEqualTo("compartir_datos", true) 
-            .whereEqualTo("rol", "user")           
-            .addSnapshotListener { snapshots, e ->
-                if (e != null || snapshots == null) return@addSnapshotListener
-
-                val lista = ArrayList<ClienteGas>()
-                for (doc in snapshots) {
-                    val email = doc.getString("email") ?: "Sin email"
-                    val nivel = doc.getLong("nivel_gas")?.toInt() ?: 0 
-                    lista.add(ClienteGas(email, nivel))
-                }
-                lista.sortBy { it.nivelGas }
-                
-                recyclerClientes.adapter = ClientesAdapter(lista) { clienteSeleccionado ->
-                    val intent = Intent(this, DetalleClienteActivity::class.java)
-                    intent.putExtra("email_cliente", clienteSeleccionado.email)
-                    intent.putExtra("es_admin", miRolActual == "admin") 
-                    startActivity(intent)
-                }
-            }
-    }
-
-    private fun conectarMQTT() {
-        if (::mqttClient.isInitialized && mqttClient.isConnected) return
-        
-        Thread {
-            try {
-                mqttClient = MqttClient(serverUri, "android-${System.currentTimeMillis()}", null)
-                val options = MqttConnectOptions().apply { isCleanSession = true }
-                
-                mqttClient.setCallback(object : MqttCallback {
-                    override fun connectionLost(cause: Throwable?) { runOnUiThread { txtEstado.text = getString(R.string.estado_desconectado) } }
-                    override fun messageArrived(topic: String?, message: MqttMessage?) {
-                        runOnUiThread { procesarMensaje(message.toString()) }
-                    }
-                    override fun deliveryComplete(token: IMqttDeliveryToken?) {}
-                })
-
-                mqttClient.connect(options)
-                if (mqttClient.isConnected) {
-                    mqttClient.subscribe(topicoGas, 0)
-                    runOnUiThread { txtEstado.text = getString(R.string.estado_conectado) }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }.start()
-    }
-
-    private fun procesarMensaje(mensaje: String) {
-        try {
-            var pesoBruto = 0f
-            
-            if (mensaje.trim().startsWith("{")) {
-                val json = JSONObject(mensaje)
-                pesoBruto = json.optDouble("pesoBrutoKg", 0.0).toFloat()
-            } else {
-                pesoBruto = mensaje.toFloatOrNull() ?: 0f
-            }
-
-            val pesoNeto = max(0f, pesoBruto - pesoTara)
-            val pesoMostrar = String.format("%.1f", pesoNeto)
-            txtPeso.text = getString(R.string.weight_format, pesoMostrar)
-            
-            val porcentaje = ((pesoNeto / capacidadBalon) * 100).toInt().coerceIn(0, 100)
-            progressBarGas.progress = porcentaje
-            
-            // --- LOGICA DE ALARMA ---
-            if (porcentaje <= umbralCritico) {
-                layoutAlertaVisual.visibility = View.VISIBLE
-                lanzarNotificacionAlerta(porcentaje)
-                
-                // LOGICA NUEVA: Buzzer Automático cada 10 minutos
-                val ahora = System.currentTimeMillis()
-                if (ahora - ultimoTiempoAlarma > INTERVALO_ALARMA) {
-                    activarAlarmaAutomatica()
-                    ultimoTiempoAlarma = ahora
-                }
-
-                if (miRolActual == "user" && auth.currentUser != null) {
-                    actualizarEstadoAlarma(auth.currentUser!!.email, true)
-                }
-            } else {
-                layoutAlertaVisual.visibility = View.GONE
-                if (miRolActual == "user" && auth.currentUser != null) {
-                    actualizarEstadoAlarma(auth.currentUser!!.email, false)
-                }
-            }
-            // ------------------------
-
-            if (miRolActual == "user" && auth.currentUser != null) {
-                guardarNivelEnNube(auth.currentUser!!.email, porcentaje)
-            }
-            
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-    
     private fun crearCanalNotificaciones() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Alerta Gas Crítico"
-            val descriptionText = "Notificaciones cuando el gas está por agotarse"
-            val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel(channelId, name, importance).apply {
-                description = descriptionText
-            }
-            val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            val channel = NotificationChannel(channelId, "Alerta Gas", NotificationManager.IMPORTANCE_HIGH)
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
         }
     }
 
     private fun lanzarNotificacionAlerta(nivelActual: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                return
-            }
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && 
+            ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
 
         val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setContentTitle("⚠️ ALERTA CRÍTICA DE GAS")
-            .setContentText("Nivel bajo ($nivelActual%). Alarma activa.")
+            .setContentTitle("⚠️ ALERTA GAS")
+            .setContentText("Nivel crítico: $nivelActual%")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
-
-        with(NotificationManagerCompat.from(this)) {
-            notify(1, builder.build())
-        }
+        NotificationManagerCompat.from(this).notify(1, builder.build())
     }
 
     private fun guardarNivelEnNube(email: String?, nivel: Int) {
         if (email == null) return
-        db.collection("usuarios")
-            .whereEqualTo("email", email)
-            .get()
-            .addOnSuccessListener { documents ->
-                for (doc in documents) {
-                    val userRef = db.collection("usuarios").document(doc.id)
-                    userRef.update("nivel_gas", nivel)
-                    val metricas = mapOf(
-                        "nivel" to nivel,
-                        "fecha" to Timestamp.now()
-                    )
-                    userRef.collection("historial_mediciones").add(metricas)
+        db.collection("usuarios").whereEqualTo("email", email).get()
+            .addOnSuccessListener { 
+                for (doc in it) {
+                    doc.reference.update("nivel_gas", nivel)
+                    doc.reference.collection("historial_mediciones").add(mapOf("nivel" to nivel, "fecha" to Timestamp.now()))
                 }
             }
     }
     
     private fun actualizarEstadoAlarma(email: String?, activar: Boolean) {
         if (email == null) return
-        db.collection("usuarios")
-            .whereEqualTo("email", email)
-            .get()
-            .addOnSuccessListener { documents ->
-                for (doc in documents) {
-                    db.collection("usuarios").document(doc.id)
-                        .update("alarma_activa", activar)
-                }
-            }
+        db.collection("usuarios").whereEqualTo("email", email).get()
+            .addOnSuccessListener { for (doc in it) doc.reference.update("alarma_activa", activar) }
     }
 }
