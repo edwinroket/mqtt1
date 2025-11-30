@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.location.Geocoder
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -44,6 +45,7 @@ import org.eclipse.paho.client.mqttv3.*
 import org.json.JSONObject
 import kotlin.math.max
 import com.example.mqtt1.R
+import java.util.Locale
 
 // Google Maps
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -65,7 +67,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var layoutUsuario: View
     private lateinit var layoutAdmin: View
     private lateinit var layoutDistribuidor: View
-    private lateinit var layoutMapaGlobal: View // NUEVO: Vista compartida
+    private lateinit var layoutMapaGlobal: View 
 
     // --- UI MODO USUARIO ---
     private lateinit var tvPeso: TextView
@@ -118,6 +120,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private var capacidadBalon: Int = 15
     private var pesoTara: Float = 0.0f 
 
+    // COORDENADAS TALCA (Fallback si falla GPS)
+    private val LAT_TALCA = -35.4264
+    private val LNG_TALCA = -71.6554
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -131,7 +137,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         inicializarVistas()
         configurarListeners()
         
-        // Inicializar Mapa
         val mapFragment = supportFragmentManager.findFragmentById(R.id.mapFragment) as? SupportMapFragment
         mapFragment?.getMapAsync(this)
         
@@ -151,9 +156,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         googleMap = map
         enableMyLocation()
         
-        // Configuración inicial (Santiago)
-        val santiago = LatLng(-33.4489, -70.6693)
-        googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(santiago, 10f))
+        // Centrar en Talca por defecto
+        val talca = LatLng(LAT_TALCA, LNG_TALCA)
+        googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(talca, 13f))
     }
     
     private fun enableMyLocation() {
@@ -175,13 +180,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun inicializarVistas() {
-        // Layouts
         layoutUsuario = findViewById(R.id.layoutModoUsuario)
         layoutAdmin = findViewById(R.id.layoutModoAdmin)
         layoutDistribuidor = findViewById(R.id.layoutModoDistribuidor)
-        layoutMapaGlobal = findViewById(R.id.layoutMapaGlobal) // Nuevo
+        layoutMapaGlobal = findViewById(R.id.layoutMapaGlobal) 
 
-        // Usuario UI
         tvPeso = findViewById(R.id.txtPeso)
         tvEstado = findViewById(R.id.txtEstado)
         tvPorcentaje = findViewById(R.id.txtPorcentajeCentro)
@@ -192,23 +195,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         chartUser = findViewById(R.id.chartUsuario)
         swBuzzer = findViewById(R.id.switchBuzzerTest)
 
-        // Admin UI
         tvTotalClientes = findViewById(R.id.txtTotalClientes)
         tvTotalAlertas = findViewById(R.id.txtTotalAlertas)
         pieChartAdmin = findViewById(R.id.chartAdminEstado)
         rvClientes = findViewById(R.id.recyclerClientes)
 
-        // Distribuidor UI
         rvDistribuidor = findViewById(R.id.recyclerDistribuidor)
         
-        // Mapa Global UI
         lblMapTitle = findViewById(R.id.lblMapTitle)
         recyclerMapList = findViewById(R.id.recyclerMapList)
         
-        // Botón Superior
         btnLogoutTop = findViewById(R.id.btnNotif)
 
-        // Nav Buttons
         navHome = findViewById(R.id.btnHome)
         navUsers = findViewById(R.id.btnUsers)
         navDevices = findViewById(R.id.btnDevices)
@@ -239,7 +237,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             if (miRolActual == "admin") {
                 startActivity(Intent(this, AdminUsersActivity::class.java))
             } else if (miRolActual == "distribuidor") {
-                // El distribuidor ve su lista "Home" como lista principal
                 mostrarVistaDistribuidor()
             } else {
                 Toast.makeText(this, "Opción no disponible", Toast.LENGTH_SHORT).show()
@@ -256,9 +253,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             resaltarBoton(navMetrics)
         }
 
-        // LOGICA BOTÓN DISPOSITIVOS / MAPA
         navDevices.setOnClickListener {
-            // Todos tienen acceso al mapa, pero ven cosas distintas
             mostrarVistaMapa()
             resaltarBoton(navDevices)
         }
@@ -291,8 +286,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         
         boton.setColorFilter(colorSelected)
     }
-
-    // --- LÓGICA DE ROLES Y VISTAS ---
 
     private fun verificarRolYPreferencias(email: String?) {
         if (email == null) return
@@ -356,14 +349,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         resaltarBoton(navHome)
     }
     
-    // --- NUEVA FUNCION: VISTA MAPA GLOBAL ---
     private fun mostrarVistaMapa() {
         layoutUsuario.visibility = View.GONE
         layoutAdmin.visibility = View.GONE
         layoutDistribuidor.visibility = View.GONE
         layoutMapaGlobal.visibility = View.VISIBLE
         
-        // Configurar según Rol
         when (miRolActual) {
             "admin" -> {
                 lblMapTitle.text = "UBICACIÓN DE CLIENTES (ADMIN)"
@@ -375,12 +366,31 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
             "distribuidor" -> {
                 lblMapTitle.text = "MI RUTA DE ENTREGA"
-                cargarDatosDistribuidor(esMapaGlobal = true) // Reutilizamos lógica
+                cargarDatosDistribuidor(esMapaGlobal = true) 
             }
         }
     }
     
-    // --- LOGICA MAPA: ADMIN (Ve todos los clientes) ---
+    private fun geocodificarDireccion(direccion: String, onResult: (LatLng?) -> Unit) {
+        Thread {
+            try {
+                val geocoder = Geocoder(this, Locale.getDefault())
+                // Limitamos a Chile para mejorar precisión (o a tu país)
+                val addresses = geocoder.getFromLocationName("$direccion, Talca, Chile", 1)
+                if (!addresses.isNullOrEmpty()) {
+                    val lat = addresses[0].latitude
+                    val lng = addresses[0].longitude
+                    runOnUiThread { onResult(LatLng(lat, lng)) }
+                } else {
+                    runOnUiThread { onResult(null) }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread { onResult(null) }
+            }
+        }.start()
+    }
+    
     private fun cargarMapaAdmin() {
         recyclerMapList.layoutManager = LinearLayoutManager(this)
         googleMap?.clear()
@@ -393,28 +403,33 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 
                 for (doc in documents) {
                     val email = doc.getString("email") ?: ""
+                    val direccion = doc.getString("direccion") ?: ""
                     val nivel = doc.getLong("nivel_gas")?.toInt() ?: 0
-                    lista.add(ClienteGas(email, nivel))
                     
-                    // Simulación GPS
-                    val latBase = -33.4489
-                    val lngBase = -70.6693
-                    val randomLat = latBase + (Math.random() - 0.5) * 0.1
-                    val randomLng = lngBase + (Math.random() - 0.5) * 0.1
-                    
-                    val colorMarker = when {
-                         nivel < 10 -> BitmapDescriptorFactory.HUE_RED
-                         nivel < 30 -> BitmapDescriptorFactory.HUE_YELLOW
-                         else -> BitmapDescriptorFactory.HUE_GREEN
+                    // Solo si tiene dirección válida intentamos geocodificar
+                    if (direccion.isNotEmpty() && direccion.length > 5) {
+                        geocodificarDireccion(direccion) { latLng ->
+                            if (latLng != null) {
+                                lista.add(ClienteGas(email, nivel))
+                                
+                                val colorMarker = when {
+                                     nivel < 10 -> BitmapDescriptorFactory.HUE_RED
+                                     nivel < 30 -> BitmapDescriptorFactory.HUE_YELLOW
+                                     else -> BitmapDescriptorFactory.HUE_GREEN
+                                }
+                                
+                                googleMap?.addMarker(MarkerOptions()
+                                    .position(latLng)
+                                    .title("$email ($nivel%)")
+                                    .snippet(direccion)
+                                    .icon(BitmapDescriptorFactory.defaultMarker(colorMarker)))
+                            }
+                        }
                     }
-                    
-                    googleMap?.addMarker(MarkerOptions()
-                        .position(LatLng(randomLat, randomLng))
-                        .title("$email ($nivel%)")
-                        .icon(BitmapDescriptorFactory.defaultMarker(colorMarker)))
                 }
                 
-                // Lista inferior simple
+                // El adaptador se llena aunque sea asíncrono, 
+                // idealmente usaríamos LiveData o esperaríamos, pero para MVP está bien.
                 recyclerMapList.adapter = ClientesAdapter(lista) {
                     val intent = Intent(this, DetalleClienteActivity::class.java)
                     intent.putExtra("email_cliente", it.email)
@@ -424,7 +439,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
     }
     
-    // --- LOGICA MAPA: USUARIO (Ve Distribuidores) ---
     private fun cargarMapaUsuario() {
         recyclerMapList.layoutManager = LinearLayoutManager(this)
         googleMap?.clear()
@@ -433,37 +447,34 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             .whereEqualTo("rol", "distribuidor")
             .get()
             .addOnSuccessListener { documents ->
-                // Aunque usemos ClienteGas, aquí representa Distribuidores para simplificar el Adapter
                 val listaDistribuidores = ArrayList<ClienteGas>()
                 
                 for (doc in documents) {
-                    val empresa = doc.getString("empresa_nombre") ?: "Distribuidor Independiente"
+                    val empresa = doc.getString("empresa_nombre") ?: "Distribuidor"
+                    val direccion = doc.getString("direccion") ?: ""
                     val email = doc.getString("email") ?: ""
-                    // Usamos 'nivel' como placeholder, no aplica realmente
-                    listaDistribuidores.add(ClienteGas(empresa, 100)) 
                     
-                    // Simulación GPS Distribuidor
-                    val latBase = -33.4489
-                    val lngBase = -70.6693
-                    val randomLat = latBase + (Math.random() - 0.5) * 0.08
-                    val randomLng = lngBase + (Math.random() - 0.5) * 0.08
-                    
-                    googleMap?.addMarker(MarkerOptions()
-                        .position(LatLng(randomLat, randomLng))
-                        .title(empresa)
-                        .snippet(email)
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))) // Azul para camiones
+                    if (direccion.isNotEmpty() && direccion.length > 5) {
+                        geocodificarDireccion(direccion) { latLng ->
+                            if (latLng != null) {
+                                listaDistribuidores.add(ClienteGas(empresa, 100)) 
+                                
+                                googleMap?.addMarker(MarkerOptions()
+                                    .position(latLng)
+                                    .title(empresa)
+                                    .snippet(direccion)
+                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))) 
+                            }
+                        }
+                    }
                 }
                 
-                // Mostrar lista simple
                 recyclerMapList.adapter = ClientesAdapter(listaDistribuidores) {
-                    // Al clickear distribuidor, quizás solo mostrar un Toast por ahora
                     Toast.makeText(this, "Distribuidor: ${it.email}", Toast.LENGTH_SHORT).show()
                 }
             }
     }
 
-    // --- LÓGICA ADMIN ---
     private fun cargarDatosAdmin() {
         db.collection("usuarios")
             .whereEqualTo("rol", "user")
@@ -519,9 +530,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         pieChartAdmin.invalidate()
     }
 
-    // --- LÓGICA DISTRIBUIDOR ---
     private fun cargarDatosDistribuidor(esMapaGlobal: Boolean = false) {
-        // Si es mapa global, usamos el recycler del mapa, sino el de la vista home distribuidor
         val targetRecycler = if (esMapaGlobal) recyclerMapList else rvDistribuidor
         targetRecycler.layoutManager = LinearLayoutManager(this)
         
@@ -538,20 +547,22 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 for (doc in snapshots) {
                     val email = doc.getString("email") ?: "Sin email"
                     val nivel = doc.getLong("nivel_gas")?.toInt() ?: 0 
+                    val direccion = doc.getString("direccion") ?: ""
+                    
                     listaPrioridad.add(ClienteGas(email, nivel))
                     
-                    if (esMapaGlobal) {
-                        val latBase = -33.4489
-                        val lngBase = -70.6693
-                        val randomLat = latBase + (Math.random() - 0.5) * 0.1
-                        val randomLng = lngBase + (Math.random() - 0.5) * 0.1
-                        
-                        val colorMarker = if (nivel < 10) BitmapDescriptorFactory.HUE_RED else BitmapDescriptorFactory.HUE_YELLOW
-                        
-                        googleMap?.addMarker(MarkerOptions()
-                            .position(LatLng(randomLat, randomLng))
-                            .title("$email ($nivel%)")
-                            .icon(BitmapDescriptorFactory.defaultMarker(colorMarker)))
+                    if (esMapaGlobal && direccion.isNotEmpty() && direccion.length > 5) {
+                        geocodificarDireccion(direccion) { latLng ->
+                            if (latLng != null) {
+                                val colorMarker = if (nivel < 10) BitmapDescriptorFactory.HUE_RED else BitmapDescriptorFactory.HUE_YELLOW
+                                
+                                googleMap?.addMarker(MarkerOptions()
+                                    .position(latLng)
+                                    .title("$email ($nivel%)")
+                                    .snippet(direccion)
+                                    .icon(BitmapDescriptorFactory.defaultMarker(colorMarker)))
+                            }
+                        }
                     }
                 }
                 listaPrioridad.sortBy { it.nivelGas }
@@ -565,7 +576,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
     }
 
-    // --- LÓGICA USUARIO ---
     private fun configurarGraficoUsuario() {
         chartUser.description.isEnabled = false
         chartUser.setTouchEnabled(true)
@@ -633,7 +643,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    // --- MQTT ---
     private fun conectarMQTT() {
         if (::mqttClient.isInitialized && mqttClient.isConnected) return
         Thread {
@@ -674,7 +683,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             progressGas.progress = porcentaje
             tvPorcentaje.text = "$porcentaje%"
 
-            // SEMÁFORO
             val colorState: Int
             val textState: String
 
@@ -715,7 +723,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    // --- UTILS ---
     private fun mostrarMenuPerfil() {
         val dialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_profile, null)
