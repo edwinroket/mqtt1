@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Estado Seleccionado: Borde Neón + Fondo más claro -->
+    <item android:state_checked="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#353A50"/>
+            <stroke android:width="2dp" android:color="#00F2FF"/>
+            <corners android:radius="16dp"/>
+        </shape>
+    </item>
+    <!-- Estado Normal: Borde sutil + Fondo oscuro -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#2A2D3E"/>
+            <stroke android:width="1dp" android:color="#3E4255"/>
+            <corners android:radius="16dp"/>
+        </shape>
+    </item>
+</selector>

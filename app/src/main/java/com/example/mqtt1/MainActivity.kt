@@ -1,6 +1,9 @@
 package com.example.mqtt1
 
 import android.Manifest
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -12,7 +15,9 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.MotionEvent
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.ProgressBar
@@ -34,6 +39,14 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.firebase.Timestamp
@@ -41,20 +54,14 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import org.eclipse.paho.client.mqttv3.*
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
+import org.eclipse.paho.client.mqttv3.MqttCallback
+import org.eclipse.paho.client.mqttv3.MqttClient
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions
+import org.eclipse.paho.client.mqttv3.MqttMessage
 import org.json.JSONObject
-import kotlin.math.max
-import com.example.mqtt1.R
 import java.util.Locale
-
-// Google Maps
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import kotlin.math.max
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -154,6 +161,19 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        
+        // --- AQUÍ APLICAMOS EL ESTILO NOCTURNO ---
+        try {
+            val success = googleMap?.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style_dark)
+            )
+            if (success == false) {
+                // Error parsing style
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        
         enableMyLocation()
         
         // Centrar en Talca por defecto
@@ -212,9 +232,43 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         navDevices = findViewById(R.id.btnDevices)
         navMetrics = findViewById(R.id.btnMetrics)
         navProfile = findViewById(R.id.btnProfileBottom)
+        
+        // --- Aplicar efecto Bounce a botones ---
+        aplicarEfectoBounce(btnLogoutTop)
+        aplicarEfectoBounce(navHome)
+        aplicarEfectoBounce(navUsers)
+        aplicarEfectoBounce(navDevices)
+        aplicarEfectoBounce(navMetrics)
+        aplicarEfectoBounce(navProfile)
 
         configurarGraficoUsuario()
         configurarGraficoAdmin()
+    }
+    
+    // Función para dar feedback táctil "Bounce"
+    @SuppressLint("ClickableViewAccessibility")
+    private fun aplicarEfectoBounce(view: View) {
+        view.setOnTouchListener { v, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    val scaleDownX = ObjectAnimator.ofFloat(v, "scaleX", 0.9f)
+                    val scaleDownY = ObjectAnimator.ofFloat(v, "scaleY", 0.9f)
+                    scaleDownX.duration = 100
+                    scaleDownY.duration = 100
+                    scaleDownX.start()
+                    scaleDownY.start()
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    val scaleUpX = ObjectAnimator.ofFloat(v, "scaleX", 1f)
+                    val scaleUpY = ObjectAnimator.ofFloat(v, "scaleY", 1f)
+                    scaleUpX.duration = 100
+                    scaleUpY.duration = 100
+                    scaleUpX.start()
+                    scaleUpY.start()
+                }
+            }
+            false // No consumir el evento para que onClick siga funcionando
+        }
     }
 
     private fun configurarListeners() {
@@ -375,7 +429,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         Thread {
             try {
                 val geocoder = Geocoder(this, Locale.getDefault())
-                // Limitamos a Chile para mejorar precisión (o a tu país)
                 val addresses = geocoder.getFromLocationName("$direccion, Talca, Chile", 1)
                 if (!addresses.isNullOrEmpty()) {
                     val lat = addresses[0].latitude
@@ -405,19 +458,29 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     val email = doc.getString("email") ?: ""
                     val direccion = doc.getString("direccion") ?: ""
                     val nivel = doc.getLong("nivel_gas")?.toInt() ?: 0
+                    val lat = doc.getDouble("lat")
+                    val lng = doc.getDouble("lng")
                     
-                    // Solo si tiene dirección válida intentamos geocodificar
-                    if (direccion.isNotEmpty() && direccion.length > 5) {
+                    lista.add(ClienteGas(email, nivel))
+                    
+                    val colorMarker = when {
+                         nivel < 10 -> BitmapDescriptorFactory.HUE_RED
+                         nivel < 30 -> BitmapDescriptorFactory.HUE_YELLOW
+                         else -> BitmapDescriptorFactory.HUE_GREEN
+                    }
+
+                    // PRIORIDAD: Coordenadas numéricas
+                    if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+                        googleMap?.addMarker(MarkerOptions()
+                            .position(LatLng(lat, lng))
+                            .title("$email ($nivel%)")
+                            .snippet(direccion) // La dirección queda como texto informativo
+                            .icon(BitmapDescriptorFactory.defaultMarker(colorMarker)))
+                    } 
+                    // FALLBACK: Texto de dirección
+                    else if (direccion.isNotEmpty() && direccion.length > 5) {
                         geocodificarDireccion(direccion) { latLng ->
                             if (latLng != null) {
-                                lista.add(ClienteGas(email, nivel))
-                                
-                                val colorMarker = when {
-                                     nivel < 10 -> BitmapDescriptorFactory.HUE_RED
-                                     nivel < 30 -> BitmapDescriptorFactory.HUE_YELLOW
-                                     else -> BitmapDescriptorFactory.HUE_GREEN
-                                }
-                                
                                 googleMap?.addMarker(MarkerOptions()
                                     .position(latLng)
                                     .title("$email ($nivel%)")
@@ -428,8 +491,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                 }
                 
-                // El adaptador se llena aunque sea asíncrono, 
-                // idealmente usaríamos LiveData o esperaríamos, pero para MVP está bien.
                 recyclerMapList.adapter = ClientesAdapter(lista) {
                     val intent = Intent(this, DetalleClienteActivity::class.java)
                     intent.putExtra("email_cliente", it.email)
@@ -453,12 +514,23 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     val empresa = doc.getString("empresa_nombre") ?: "Distribuidor"
                     val direccion = doc.getString("direccion") ?: ""
                     val email = doc.getString("email") ?: ""
+                    val lat = doc.getDouble("lat")
+                    val lng = doc.getDouble("lng")
                     
-                    if (direccion.isNotEmpty() && direccion.length > 5) {
+                    listaDistribuidores.add(ClienteGas(empresa, 100)) 
+                    
+                    // PRIORIDAD: Coordenadas
+                    if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+                        googleMap?.addMarker(MarkerOptions()
+                            .position(LatLng(lat, lng))
+                            .title(empresa)
+                            .snippet(direccion)
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))) 
+                    }
+                    // FALLBACK: Texto
+                    else if (direccion.isNotEmpty() && direccion.length > 5) {
                         geocodificarDireccion(direccion) { latLng ->
                             if (latLng != null) {
-                                listaDistribuidores.add(ClienteGas(empresa, 100)) 
-                                
                                 googleMap?.addMarker(MarkerOptions()
                                     .position(latLng)
                                     .title(empresa)
@@ -548,21 +620,34 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     val email = doc.getString("email") ?: "Sin email"
                     val nivel = doc.getLong("nivel_gas")?.toInt() ?: 0 
                     val direccion = doc.getString("direccion") ?: ""
+                    val lat = doc.getDouble("lat")
+                    val lng = doc.getDouble("lng")
                     
                     listaPrioridad.add(ClienteGas(email, nivel))
                     
-                    if (esMapaGlobal && direccion.isNotEmpty() && direccion.length > 5) {
-                        geocodificarDireccion(direccion) { latLng ->
-                            if (latLng != null) {
-                                val colorMarker = if (nivel < 10) BitmapDescriptorFactory.HUE_RED else BitmapDescriptorFactory.HUE_YELLOW
-                                
-                                googleMap?.addMarker(MarkerOptions()
-                                    .position(latLng)
-                                    .title("$email ($nivel%)")
-                                    .snippet(direccion)
-                                    .icon(BitmapDescriptorFactory.defaultMarker(colorMarker)))
+                    if (esMapaGlobal) {
+                         val colorMarker = if (nivel < 10) BitmapDescriptorFactory.HUE_RED else BitmapDescriptorFactory.HUE_YELLOW
+                         
+                         // PRIORIDAD: Coordenadas
+                         if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+                             googleMap?.addMarker(MarkerOptions()
+                                .position(LatLng(lat, lng))
+                                .title("$email ($nivel%)")
+                                .snippet(direccion)
+                                .icon(BitmapDescriptorFactory.defaultMarker(colorMarker)))
+                         }
+                         // FALLBACK: Texto
+                         else if (direccion.isNotEmpty() && direccion.length > 5) {
+                             geocodificarDireccion(direccion) { latLng ->
+                                if (latLng != null) {
+                                    googleMap?.addMarker(MarkerOptions()
+                                        .position(latLng)
+                                        .title("$email ($nivel%)")
+                                        .snippet(direccion)
+                                        .icon(BitmapDescriptorFactory.defaultMarker(colorMarker)))
+                                }
                             }
-                        }
+                         }
                     }
                 }
                 listaPrioridad.sortBy { it.nivelGas }
@@ -680,8 +765,24 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             tvPeso.text = getString(R.string.weight_format, pesoMostrar)
             
             val porcentaje = ((pesoNeto / capacidadBalon) * 100).toInt().coerceIn(0, 100)
-            progressGas.progress = porcentaje
-            tvPorcentaje.text = "$porcentaje%"
+            
+            // --- ANIMACIÓN DE BARRA DE PROGRESO Y PORCENTAJE ---
+            val currentProgress = progressGas.progress
+            if (currentProgress != porcentaje) {
+                // Animar Barra
+                val animator = ObjectAnimator.ofInt(progressGas, "progress", currentProgress, porcentaje)
+                animator.duration = 800 // 800ms de animación
+                animator.interpolator = DecelerateInterpolator()
+                animator.start()
+                
+                // Animar Texto Numérico (Rolling Number)
+                val textAnimator = ValueAnimator.ofInt(currentProgress, porcentaje)
+                textAnimator.duration = 800
+                textAnimator.addUpdateListener { animation ->
+                    tvPorcentaje.text = "${animation.animatedValue}%"
+                }
+                textAnimator.start()
+            }
 
             val colorState: Int
             val textState: String

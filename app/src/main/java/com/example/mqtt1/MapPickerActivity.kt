@@ -44,6 +44,11 @@ class MapPickerActivity : AppCompatActivity(), OnMapReadyCallback {
             if (selectedAddress.isNotEmpty()) {
                 val resultIntent = Intent()
                 resultIntent.putExtra("address", selectedAddress)
+                // Enviamos las coordenadas exactas
+                selectedLocation?.let { loc ->
+                    resultIntent.putExtra("lat", loc.latitude)
+                    resultIntent.putExtra("lng", loc.longitude)
+                }
                 setResult(RESULT_OK, resultIntent)
                 finish()
             }
@@ -69,8 +74,6 @@ class MapPickerActivity : AppCompatActivity(), OnMapReadyCallback {
         val query = edtSearchMap.text.toString()
         if (query.isBlank()) return
         
-        // Añadir contexto local para mejorar búsqueda (ej: ", Talca, Chile")
-        // O dejar abierto para búsqueda global
         val searchQuery = "$query, Chile" 
         
         Thread {
@@ -83,12 +86,7 @@ class MapPickerActivity : AppCompatActivity(), OnMapReadyCallback {
                         val location = addresses[0]
                         val latLng = LatLng(location.latitude, location.longitude)
                         
-                        // Mover la cámara al resultado
                         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
-                        
-                        // Cerrar teclado (opcional pero recomendado)
-                        // val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                        // imm.hideSoftInputFromWindow(edtSearchMap.windowToken, 0)
                         
                     } else {
                         Toast.makeText(this, "Ubicación no encontrada", Toast.LENGTH_SHORT).show()
@@ -110,7 +108,6 @@ class MapPickerActivity : AppCompatActivity(), OnMapReadyCallback {
         val startLocation = LatLng(-35.4264, -71.6554)
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startLocation, 15f))
 
-        // Escuchar movimiento de la cámara (PIN FIJO)
         googleMap.setOnCameraIdleListener {
             val center = googleMap.cameraPosition.target
             selectedLocation = center
@@ -130,7 +127,6 @@ class MapPickerActivity : AppCompatActivity(), OnMapReadyCallback {
                 runOnUiThread {
                     if (!addresses.isNullOrEmpty()) {
                         val address = addresses[0]
-                        // Priorizar calle y número
                         val sb = StringBuilder()
                         if (address.thoroughfare != null) sb.append(address.thoroughfare).append(" ")
                         if (address.subThoroughfare != null) sb.append(address.subThoroughfare)

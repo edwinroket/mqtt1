@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient"
+    android:background="#202235"
     android:fillViewport="true">
 
     <LinearLayout
@@ -12,144 +12,193 @@
         android:orientation="vertical"
         android:padding="24dp">
 
+        <!-- TÍTULO -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Configuración de Balón"
+            android:text="Mi Cilindro"
             android:textSize="28sp"
-            android:fontFamily="sans-serif-medium"
-            android:textColor="@color/text_primary"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Configura las características de tu instalación para calibrar el sensor."
+            android:textSize="14sp"
+            android:textColor="#B0B3C6"
             android:layout_marginBottom="32dp"/>
 
-        <!-- CONTENEDOR GLASS PARA FORMULARIO -->
+        <!-- SECCIÓN TAMAÑO -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CAPACIDAD DEL CILINDRO"
+            android:textSize="12sp"
+            android:letterSpacing="0.1"
+            android:textStyle="bold"
+            android:textColor="#00F2FF"
+            android:layout_marginBottom="16dp"/>
+
+        <RadioGroup
+            android:id="@+id/radioGroupKilos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="32dp">
+
+            <!-- 5KG -->
+            <RadioButton
+                android:id="@+id/rb5kg"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_gas_selector"
+                android:button="@null"
+                android:text="5kg"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginEnd="8dp"/>
+
+            <!-- 11KG -->
+            <RadioButton
+                android:id="@+id/rb11kg"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_gas_selector"
+                android:button="@null"
+                android:text="11kg"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginEnd="8dp"/>
+
+            <!-- 15KG -->
+            <RadioButton
+                android:id="@+id/rb15kg"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_gas_selector"
+                android:button="@null"
+                android:text="15kg"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginEnd="8dp"/>
+
+            <!-- 45KG -->
+            <RadioButton
+                android:id="@+id/rb45kg"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_gas_selector"
+                android:button="@null"
+                android:text="45kg"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:textSize="18sp"/>
+        </RadioGroup>
+
+        <!-- SECCIÓN EMPRESA -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DISTRIBUIDOR ACTUAL"
+            android:textSize="12sp"
+            android:letterSpacing="0.1"
+            android:textStyle="bold"
+            android:textColor="#00F2FF"
+            android:layout_marginBottom="16dp"/>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_marginBottom="32dp"
+            app:boxBackgroundColor="#2A2D3E"
+            app:boxStrokeColor="#00F2FF"
+            app:boxStrokeWidth="1dp"
+            app:hintTextColor="#00F2FF"
+            app:startIconDrawable="@android:drawable/ic_menu_myplaces"
+            app:startIconTint="#00F2FF"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusBottomEnd="12dp">
+
+            <AutoCompleteTextView
+                android:id="@+id/spinnerEmpresa"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:text="Gasco"
+                android:textColor="#FFFFFF"
+                android:padding="16dp"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- FECHA INSTALACIÓN -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/bg_glass_effect"
-            android:padding="24dp">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_input_dark"
+            android:padding="20dp"
+            android:layout_marginBottom="40dp">
 
-            <!-- SELECCIÓN DE KILOS -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Tamaño del Balón"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/neon_blue"
-                android:layout_marginBottom="16dp"/>
-
-            <RadioGroup
-                android:id="@+id/radioGroupKilos"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_horizontal"
-                android:layout_marginBottom="32dp">
-
-                <RadioButton
-                    android:id="@+id/rb5kg"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="5kg"
-                    android:textColor="@color/text_primary"
-                    android:buttonTint="@color/neon_green"
-                    android:layout_marginEnd="16dp"/>
-                <RadioButton
-                    android:id="@+id/rb11kg"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="11kg"
-                    android:textColor="@color/text_primary"
-                    android:buttonTint="@color/neon_green"
-                    android:layout_marginEnd="16dp"/>
-                <RadioButton
-                    android:id="@+id/rb15kg"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="15kg"
-                    android:textColor="@color/text_primary"
-                    android:buttonTint="@color/neon_green"
-                    android:layout_marginEnd="16dp"/>
-                <RadioButton
-                    android:id="@+id/rb45kg"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="45kg"
-                    android:textColor="@color/text_primary"
-                    android:buttonTint="@color/neon_green"/>
-            </RadioGroup>
-
-            <!-- SELECCIÓN DE EMPRESA -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Empresa Distribuidora"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/neon_blue"
-                android:layout_marginBottom="12dp"/>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                android:layout_marginBottom="32dp"
-                android:textColorHint="@color/text_secondary"
-                app:boxStrokeColor="@color/neon_blue"
-                app:boxStrokeWidth="1dp"
-                app:hintTextColor="@color/neon_blue"
-                app:startIconTint="@color/text_secondary">
-
-                <AutoCompleteTextView
-                    android:id="@+id/spinnerEmpresa"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="none"
-                    android:text="Gasco" 
-                    android:textColor="@color/text_primary"
-                    android:background="@color/glass_surface"
-                    />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- FECHA INSTALACIÓN -->
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_today"
+                app:tint="#00F2FF"
+                android:layout_marginEnd="16dp"/>
+            
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_glass_effect"
-                android:padding="16dp"
-                android:layout_marginBottom="32dp">
+                android:orientation="vertical">
                 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Fecha de Instalación (Hoy)"
-                    android:textSize="14sp"
-                    android:textColor="@color/text_secondary"/>
+                    android:text="Fecha de Instalación"
+                    android:textSize="12sp"
+                    android:textColor="#B0B3C6"/>
                     
                 <TextView
                     android:id="@+id/txtFechaHoy"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="--/--/----"
-                    android:textSize="20sp"
-                    android:fontFamily="sans-serif-medium"
-                    android:textColor="@color/neon_purple"
-                    android:layout_marginTop="8dp"/>
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginTop="4dp"/>
             </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnGuardarConfig"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:text="Confirmar Balón Nuevo"
-                android:textSize="16sp"
-                android:textColor="@color/bg_app_start"
-                android:textStyle="bold"
-                app:backgroundTint="@color/neon_blue"
-                app:cornerRadius="12dp"/>
-
         </LinearLayout>
+
+        <!-- BOTÓN GUARDAR -->
+        <Button
+            android:id="@+id/btnGuardarConfig"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Guardar Configuración"
+            android:textColor="#202235"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:backgroundTint="#00F2FF"
+            app:cornerRadius="30dp"/>
+
     </LinearLayout>
 </ScrollView>

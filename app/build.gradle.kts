@@ -59,6 +59,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore:25.1.0")
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
+    implementation("com.google.firebase:firebase-storage:20.3.0") // AGREGADO: Storage
     
     // MQTT
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
