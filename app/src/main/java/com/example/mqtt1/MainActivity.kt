@@ -461,7 +461,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     val lat = doc.getDouble("lat")
                     val lng = doc.getDouble("lng")
                     
-                    lista.add(ClienteGas(email, nivel))
+                    lista.add(ClienteGas(email, nivel, "user", "", direccion))
                     
                     val colorMarker = when {
                          nivel < 10 -> BitmapDescriptorFactory.HUE_RED
@@ -491,9 +491,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                 }
                 
-                recyclerMapList.adapter = ClientesAdapter(lista) {
+                recyclerMapList.adapter = ClientesAdapter(lista) { cliente ->
+                    // Admin: Abrir detalle de cliente
                     val intent = Intent(this, DetalleClienteActivity::class.java)
-                    intent.putExtra("email_cliente", it.email)
+                    intent.putExtra("email_cliente", cliente.email)
                     intent.putExtra("es_admin", true)
                     startActivity(intent)
                 }
@@ -517,7 +518,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     val lat = doc.getDouble("lat")
                     val lng = doc.getDouble("lng")
                     
-                    listaDistribuidores.add(ClienteGas(empresa, 100)) 
+                    // Aquí marcamos explícitamente el rol como distribuidor
+                    listaDistribuidores.add(ClienteGas(email, 0, "distribuidor", empresa, direccion)) 
                     
                     // PRIORIDAD: Coordenadas
                     if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
@@ -541,8 +543,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                 }
                 
-                recyclerMapList.adapter = ClientesAdapter(listaDistribuidores) {
-                    Toast.makeText(this, "Distribuidor: ${it.email}", Toast.LENGTH_SHORT).show()
+                recyclerMapList.adapter = ClientesAdapter(listaDistribuidores) { cliente ->
+                    // Usuario hace clic en Distribuidor -> ABRIR CHAT
+                    val intent = Intent(this, ChatActivity::class.java)
+                    intent.putExtra("email_destino", cliente.email)
+                    startActivity(intent)
                 }
             }
     }
@@ -623,7 +628,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     val lat = doc.getDouble("lat")
                     val lng = doc.getDouble("lng")
                     
-                    listaPrioridad.add(ClienteGas(email, nivel))
+                    listaPrioridad.add(ClienteGas(email, nivel, "user", "", direccion))
                     
                     if (esMapaGlobal) {
                          val colorMarker = if (nivel < 10) BitmapDescriptorFactory.HUE_RED else BitmapDescriptorFactory.HUE_YELLOW

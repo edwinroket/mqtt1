@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.1"
+agp = "8.13.2"
 kotlin = "2.0.21"
 # BAJAMOS A VERSIONES ESTABLES COMPATIBLES CON SDK 34
 coreKtx = "1.13.1"

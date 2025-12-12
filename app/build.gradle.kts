@@ -19,13 +19,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         
-        // Leer API Key de local.properties
-        val localProperties = Properties()
-        val localPropertiesFile = rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            localProperties.load(localPropertiesFile.inputStream())
-        }
-        val mapsApiKey = localProperties.getProperty("MAPS_API_KEY") ?: ""
+        // --- CONFIGURACIÓN DE API KEY ---
+        // Usamos la clave proporcionada directamente para evitar errores de lectura
+        val mapsApiKey = "AIzaSyBRZJ9B6E1joXXhM3W9QpD_f0-khgcijxw"
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
@@ -59,7 +55,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore:25.1.0")
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
-    implementation("com.google.firebase:firebase-storage:20.3.0") // AGREGADO: Storage
+    implementation("com.google.firebase:firebase-storage:20.3.0")
     
     // MQTT
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")

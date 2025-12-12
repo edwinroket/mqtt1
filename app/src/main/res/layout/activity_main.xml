@@ -486,7 +486,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_home_modern"
+                android:src="@drawable/ic_nav_home_pro" 
                 app:tint="@color/accent_blue"/>
                 
             <ImageView
@@ -494,7 +494,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_myplaces"
+                android:src="@drawable/ic_nav_users_pro" 
                 app:tint="@color/white"/>
                 
             <ImageView
@@ -502,7 +502,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="32dp"
-                android:src="@android:drawable/ic_menu_sort_by_size"
+                android:src="@drawable/ic_nav_metrics_pro" 
                 app:tint="@color/white"/>
                 
             <ImageView
@@ -510,15 +510,15 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_dialog_map"
-                app:tint="@color/white"/> <!-- Icono cambiado a Mapa -->
+                android:src="@drawable/ic_nav_devices_pro" 
+                app:tint="@color/white"/>
                 
             <ImageView
                 android:id="@+id/btnProfileBottom"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_my_calendar"
+                android:src="@drawable/ic_nav_profile_pro" 
                 app:tint="@color/white"/>
         </LinearLayout>
     </FrameLayout>

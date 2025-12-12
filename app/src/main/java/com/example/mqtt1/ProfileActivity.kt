@@ -2,6 +2,7 @@ package com.example.mqtt1
 
 import android.app.Activity
 import android.content.Intent
+import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -17,6 +18,7 @@ import com.bumptech.glide.Glide
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import java.util.Locale
 
 class ProfileActivity : AppCompatActivity() {
 
@@ -31,6 +33,7 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var containerAddress: LinearLayout
     private lateinit var containerCompany: LinearLayout
     private lateinit var btnGuardar: Button
+    private lateinit var btnChangePassword: Button // NUEVO
     
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
@@ -89,12 +92,12 @@ class ProfileActivity : AppCompatActivity() {
         txtEmail = findViewById(R.id.txtProfileEmail)
         
         imgProfile = findViewById(R.id.imgProfileEdit)
-        // El botón de cámara puede ser el CardView contenedor o un botón específico
         btnCamera = findViewById(R.id.cardProfilePic) 
         
         containerAddress = findViewById(R.id.containerAddress)
         containerCompany = findViewById(R.id.containerCompany)
         btnGuardar = findViewById(R.id.btnSaveProfile)
+        btnChangePassword = findViewById(R.id.btnChangePassword) // NUEVO
 
         // Configurar campo de dirección
         edtDireccion.isFocusable = false
@@ -107,11 +110,29 @@ class ProfileActivity : AppCompatActivity() {
         btnCamera.setOnClickListener {
             galleryLauncher.launch("image/*")
         }
+        
+        // Configurar botón de contraseña
+        btnChangePassword.setOnClickListener {
+            enviarCorreoRecuperacion()
+        }
 
         cargarDatosUsuario()
 
         btnGuardar.setOnClickListener {
             guardarCambios()
+        }
+    }
+    
+    private fun enviarCorreoRecuperacion() {
+        val email = auth.currentUser?.email
+        if (email != null) {
+            auth.sendPasswordResetEmail(email)
+                .addOnSuccessListener {
+                    Toast.makeText(this, "Correo de cambio de contraseña enviado a $email", Toast.LENGTH_LONG).show()
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this, "Error al enviar correo: ${it.message}", Toast.LENGTH_SHORT).show()
+                }
         }
     }
     
@@ -137,9 +158,20 @@ class ProfileActivity : AppCompatActivity() {
                             .into(imgProfile)
                     }
                     
-                    // Cargar coordenadas existentes si las hay
+                    // Cargar coordenadas existentes
                     latitud = document.getDouble("lat")
                     longitud = document.getDouble("lng")
+                    
+                    // Lógica para Dirección
+                    val direccionGuardada = document.getString("direccion")
+                    if (!direccionGuardada.isNullOrEmpty()) {
+                        edtDireccion.setText(direccionGuardada)
+                    } else {
+                        // Si no hay texto pero si coordenadas, buscar dirección
+                        if (latitud != null && longitud != null && latitud != 0.0) {
+                            obtenerDireccionDesdeCoordenadas(latitud!!, longitud!!)
+                        }
+                    }
                     
                     // Rol
                     miRolActual = document.getString("rol") ?: "user"
@@ -153,23 +185,53 @@ class ProfileActivity : AppCompatActivity() {
                         "distribuidor" -> {
                             containerAddress.visibility = View.VISIBLE
                             containerCompany.visibility = View.VISIBLE
-                            
-                            edtDireccion.setText(document.getString("direccion") ?: "")
                             edtEmpresa.setText(document.getString("empresa_nombre") ?: "")
                         }
                         else -> { // user
                             containerAddress.visibility = View.VISIBLE
                             containerCompany.visibility = View.GONE
-                            
-                            edtDireccion.setText(document.getString("direccion") ?: "")
                         }
                     }
                 }
             }
     }
+    
+    private fun obtenerDireccionDesdeCoordenadas(lat: Double, lng: Double) {
+        edtDireccion.setText("Cargando dirección...")
+        Thread {
+            try {
+                val geocoder = Geocoder(this, Locale.getDefault())
+                val addresses = geocoder.getFromLocation(lat, lng, 1)
+                
+                runOnUiThread {
+                    if (!addresses.isNullOrEmpty()) {
+                        val address = addresses[0]
+                        val sb = StringBuilder()
+                        if (address.thoroughfare != null) sb.append(address.thoroughfare).append(" ")
+                        if (address.subThoroughfare != null) sb.append(address.subThoroughfare)
+                        
+                        if (sb.isEmpty()) {
+                             // Si no hay calle exacta, probar con nombre del lugar
+                             if (address.featureName != null) sb.append(address.featureName)
+                             else sb.append("Ubicación GPS Detectada")
+                        }
+                        
+                        edtDireccion.setText(sb.toString())
+                    } else {
+                        edtDireccion.setText("Ubicación GPS (${String.format("%.4f", lat)}, ${String.format("%.4f", lng)})")
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                     // Si falla geocoder, mostrar coords
+                     edtDireccion.setText("${String.format("%.4f", lat)}, ${String.format("%.4f", lng)}")
+                }
+            }
+        }.start()
+    }
 
     private fun guardarCambios() {
-        // Deshabilitar botón para evitar doble click
         btnGuardar.isEnabled = false
         btnGuardar.text = "Guardando..."
         
@@ -193,14 +255,13 @@ class ProfileActivity : AppCompatActivity() {
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Error al subir imagen: ${it.message}", Toast.LENGTH_SHORT).show()
-                actualizarFirestore(null) // Guardar datos sin foto si falla
+                actualizarFirestore(null) 
             }
     }
     
     private fun actualizarFirestore(nuevaFotoUrl: String?) {
         val userEmail = auth.currentUser?.email ?: return
         
-        // Datos Base
         val datosActualizados = mutableMapOf<String, Any>(
             "nombre" to edtNombre.text.toString(),
             "telefono" to edtTelefono.text.toString()
@@ -210,11 +271,8 @@ class ProfileActivity : AppCompatActivity() {
             datosActualizados["foto_url"] = nuevaFotoUrl
         }
         
-        // Datos condicionales
         if (containerAddress.visibility == View.VISIBLE) {
             datosActualizados["direccion"] = edtDireccion.text.toString()
-            
-            // Guardar coordenadas si existen
             latitud?.let { datosActualizados["lat"] = it }
             longitud?.let { datosActualizados["lng"] = it }
         }

@@ -6,11 +6,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    
-    <!-- NUEVO: Permiso para ver tu ubicación en el mapa -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-    <!-- Re-forzando build -->
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -22,10 +19,10 @@
         android:theme="@style/Theme.Mqtt1"
         tools:targetApi="31">
         
-        <!-- Google Maps API Key (inyectada por Gradle) -->
+        <!-- API KEY PEGADA DIRECTAMENTE PARA DESCARTAR ERRORES -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}"/>
+            android:value="AIzaSyBRZJ9B6E1joXXhM3W9QpD_f0-khgcijxw"/>
         
         <activity
             android:name=".LoginActivity"
@@ -41,15 +38,11 @@
             android:exported="false" />
             
         <activity android:name=".RegisterActivity" />
-        
-        <!-- NUEVAS ACTIVIDADES -->
         <activity android:name=".ProfileActivity" android:parentActivityName=".MainActivity"/>
         <activity android:name=".GasConfActivity" android:parentActivityName=".ProfileActivity"/>
         <activity android:name=".DetalleClienteActivity" android:parentActivityName=".MainActivity"/>
-        
         <activity android:name=".AdminUsersActivity" android:parentActivityName=".MainActivity"/>
         
-        <!-- ACTIVIDAD MAP PICKER (SELECTOR DE UBICACIÓN) -->
         <activity 
             android:name=".MapPickerActivity" 
             android:parentActivityName=".ProfileActivity"

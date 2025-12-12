@@ -14,7 +14,6 @@ class ClientesAdapter(
 ) : RecyclerView.Adapter<ClientesAdapter.ClienteViewHolder>() {
 
     class ClienteViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        // Elementos del nuevo layout item_cliente_gas.xml
         val txtEmail: TextView = view.findViewById(R.id.txtClienteEmail)
         val txtNivel: TextView = view.findViewById(R.id.txtNivelGas)
         val txtStatus: TextView = view.findViewById(R.id.statusChip)
@@ -31,35 +30,46 @@ class ClientesAdapter(
         val cliente = listaClientes[position]
         val context = holder.itemView.context
         
-        // 1. Email y Avatar
-        holder.txtEmail.text = cliente.email
-        holder.txtInitial.text = cliente.email.firstOrNull()?.toString()?.uppercase() ?: "U"
+        // 1. Datos Básicos
+        // Si es distribuidor y tiene nombre de empresa, mostrar eso en vez del email
+        if (cliente.rol == "distribuidor" && cliente.empresa.isNotEmpty()) {
+            holder.txtEmail.text = cliente.empresa
+            holder.txtInitial.text = cliente.empresa.firstOrNull()?.toString()?.uppercase() ?: "D"
+        } else {
+            holder.txtEmail.text = cliente.email
+            holder.txtInitial.text = cliente.email.firstOrNull()?.toString()?.uppercase() ?: "U"
+        }
         
-        // 2. Nivel
-        holder.txtNivel.text = "${cliente.nivelGas}%"
+        // 2. Lógica Diferenciada por Rol
+        if (cliente.rol == "distribuidor") {
+            // Ocultar datos de gas
+            holder.txtNivel.visibility = View.GONE
+            holder.txtStatus.visibility = View.GONE
+        } else {
+            // Mostrar datos de gas (Lógica original)
+            holder.txtNivel.visibility = View.VISIBLE
+            holder.txtStatus.visibility = View.VISIBLE
+            holder.txtNivel.text = "${cliente.nivelGas}%"
 
-        // 3. Lógica de Estado y Colores
-        when {
-            cliente.nivelGas < 10 -> {
-                // CRÍTICO
-                holder.txtStatus.text = "CRÍTICO"
-                holder.txtStatus.setTextColor(Color.WHITE)
-                holder.txtStatus.background = ContextCompat.getDrawable(context, R.drawable.bg_status_chip_red) // Necesitas crear este drawable o usar color directo
-                holder.txtNivel.setTextColor(Color.parseColor("#FF5252")) // Rojo Neón
-            }
-            cliente.nivelGas < 30 -> {
-                // ALERTA
-                holder.txtStatus.text = "ALERTA"
-                holder.txtStatus.setTextColor(Color.BLACK)
-                holder.txtStatus.background = ContextCompat.getDrawable(context, R.drawable.bg_status_chip_yellow)
-                holder.txtNivel.setTextColor(Color.parseColor("#FFD740")) // Amarillo Neón
-            }
-            else -> {
-                // NORMAL
-                holder.txtStatus.text = "NORMAL"
-                holder.txtStatus.setTextColor(Color.BLACK)
-                holder.txtStatus.background = ContextCompat.getDrawable(context, R.drawable.bg_status_chip_green)
-                holder.txtNivel.setTextColor(Color.parseColor("#69F0AE")) // Verde Neón
+            when {
+                cliente.nivelGas < 10 -> {
+                    holder.txtStatus.text = "CRÍTICO"
+                    holder.txtStatus.setTextColor(Color.WHITE)
+                    holder.txtStatus.background = ContextCompat.getDrawable(context, R.drawable.bg_status_chip_red)
+                    holder.txtNivel.setTextColor(Color.parseColor("#FF5252"))
+                }
+                cliente.nivelGas < 30 -> {
+                    holder.txtStatus.text = "ALERTA"
+                    holder.txtStatus.setTextColor(Color.BLACK)
+                    holder.txtStatus.background = ContextCompat.getDrawable(context, R.drawable.bg_status_chip_yellow)
+                    holder.txtNivel.setTextColor(Color.parseColor("#FFD740"))
+                }
+                else -> {
+                    holder.txtStatus.text = "NORMAL"
+                    holder.txtStatus.setTextColor(Color.BLACK)
+                    holder.txtStatus.background = ContextCompat.getDrawable(context, R.drawable.bg_status_chip_green)
+                    holder.txtNivel.setTextColor(Color.parseColor("#69F0AE"))
+                }
             }
         }
 

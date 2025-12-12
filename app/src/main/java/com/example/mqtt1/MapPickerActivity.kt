@@ -15,6 +15,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import java.util.Locale
 
 class MapPickerActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -103,6 +104,18 @@ class MapPickerActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        
+        // --- APLICAR ESTILO NOCTURNO AQUÍ TAMBIÉN ---
+        try {
+            val success = googleMap.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(this, R.raw.map_style_dark)
+            )
+            if (!success) {
+                // Error al cargar estilo
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         
         // Configuración inicial (Talca por defecto)
         val startLocation = LatLng(-35.4264, -71.6554)
